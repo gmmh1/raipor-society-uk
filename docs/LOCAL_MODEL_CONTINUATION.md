@@ -23,7 +23,7 @@ Load these files into your local model context at the start of each session:
 
 ## 3. Generate handoff context before switching models
 
-Run this command from repo root:
+Run this command from repo root (works on Windows without make):
 
 ```powershell
 pwsh -File scripts/export-local-handoff.ps1
@@ -43,6 +43,13 @@ pwsh -File scripts/local-qwen-session.ps1
 ```
 
 This also creates `docs/LOCAL_MODEL_START_PROMPT.md`.
+
+If you have `make` installed, equivalent shortcuts are available:
+
+```text
+make local-handoff
+make local-qwen
+```
 
 ## 4. Start local model with same project rules
 

@@ -106,27 +106,39 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) in sequence:
 
 Use this workflow to let a local model continue the same project with the same architecture constraints:
 
-1. Generate handoff context:
+1. Generate handoff context (Windows-native):
+
+```powershell
+pwsh -File scripts/export-local-handoff.ps1
+```
+
+Optional (if `make` is installed):
 
 ```bash
 make local-handoff
 ```
 
-Or generate handoff context and a ready starter prompt in one step:
+2. Generate handoff context and a ready starter prompt in one step (Windows-native):
+
+```powershell
+pwsh -File scripts/local-qwen-session.ps1
+```
+
+Optional (if `make` is installed):
 
 ```bash
 make local-qwen
 ```
 
-2. Load these files into your local coding model session:
+3. Load these files into your local coding model session:
 
 - `CLAUDE.md`
 - `docs/EXECUTABLE_PLAN.md`
 - `docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md`
 - `docs/QWEN_LOCAL_SYSTEM_PROMPT.md`
 - `docs/LOCAL_MODEL_SESSION_CONTEXT.md`
-- `docs/LOCAL_MODEL_START_PROMPT.md` (if generated with `make local-qwen`)
+- `docs/LOCAL_MODEL_START_PROMPT.md` (if generated)
 
-3. Follow the full guide:
+4. Follow the full guide:
 
 - [docs/LOCAL_MODEL_CONTINUATION.md](docs/LOCAL_MODEL_CONTINUATION.md)
