@@ -33,6 +33,8 @@ This plan converts the strategy into implementable engineering milestones with d
 
 - Module 1 foundation implemented in `apps.identity` with custom user model, role model, RBAC service, and identity API endpoints.
 - Added ADR: `docs/adr/0002-authentication-rbac-boundaries.md`.
+- Module 2 lifecycle foundation implemented in `apps.membership` with transition rules, audit trail, member self-view endpoint, and role-gated transition endpoint.
+- Added ADR: `docs/adr/0003-membership-lifecycle-and-audit.md`.
 
 ### Deliverables
 
