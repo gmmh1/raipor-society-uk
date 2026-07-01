@@ -73,6 +73,11 @@ This plan converts the strategy into implementable engineering milestones with d
 
 ## Phase 4: Finance + Shop (Weeks 15-18)
 
+### Current progress snapshot
+
+- Finance core implemented in `apps.finance` with unified ledger entries, payment transaction model, idempotent webhook ingestion, and reconciliation summary API.
+- Added ADR: `docs/adr/0006-finance-ledger-payments-and-idempotent-webhooks.md`.
+
 ### Deliverables
 
 - Unified ledger domain (donations, fees, sales, expenses, refunds).
