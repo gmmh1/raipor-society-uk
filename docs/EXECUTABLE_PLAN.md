@@ -52,6 +52,11 @@ This plan converts the strategy into implementable engineering milestones with d
 
 ## Phase 3: Events + Notifications (Weeks 11-14)
 
+### Current progress snapshot
+
+- Module 3 events core implemented in `apps.events` with event model, registration flow, attendance check-in endpoint, and role-based operational gates.
+- Added ADR: `docs/adr/0004-events-registration-and-attendance.md`.
+
 ### Deliverables
 
 - Event model, registration, attendance, QR check-in.
