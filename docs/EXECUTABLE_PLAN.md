@@ -29,6 +29,11 @@ This plan converts the strategy into implementable engineering milestones with d
 
 ## Phase 2: Identity + RBAC + Membership (Weeks 5-10)
 
+### Current progress snapshot
+
+- Module 1 foundation implemented in `apps.identity` with custom user model, role model, RBAC service, and identity API endpoints.
+- Added ADR: `docs/adr/0002-authentication-rbac-boundaries.md`.
+
 ### Deliverables
 
 - Custom user model and role hierarchy.
