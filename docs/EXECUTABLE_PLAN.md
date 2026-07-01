@@ -56,6 +56,8 @@ This plan converts the strategy into implementable engineering milestones with d
 
 - Module 3 events core implemented in `apps.events` with event model, registration flow, attendance check-in endpoint, and role-based operational gates.
 - Added ADR: `docs/adr/0004-events-registration-and-attendance.md`.
+- Notifications abstraction implemented in `apps.notifications` with queued delivery model, role-gated send endpoint, and async Celery tasks for event reminders and summaries.
+- Added ADR: `docs/adr/0005-notification-abstraction-and-async-jobs.md`.
 
 ### Deliverables
 

@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.identity",
     "apps.membership",
     "apps.events",
+    "apps.notifications",
 ]
 
 MIDDLEWARE = [

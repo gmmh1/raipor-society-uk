@@ -3,6 +3,8 @@ from django.utils import timezone
 
 from apps.membership.domain.status import ALLOWED_TRANSITIONS, STATUS_ACTIVE, STATUS_EXPIRED
 from apps.membership.models import Membership, MembershipStatusTransition
+from apps.notifications.application.notification_orchestrator import enqueue_notification
+from apps.notifications.domain.types import CHANNEL_EMAIL
 
 
 class MembershipLifecycleError(ValueError):
@@ -46,5 +48,17 @@ def transition_membership_status(
         to_status=new_status,
         reason=reason,
         changed_by=actor,
+    )
+
+    enqueue_notification(
+        recipient=membership.user,
+        channel=CHANNEL_EMAIL,
+        subject="Membership status updated",
+        body=f"Your membership status changed from {current_status} to {new_status}.",
+        context={
+            "membership_id": str(membership.id),
+            "from_status": current_status,
+            "to_status": new_status,
+        },
     )
     return membership
