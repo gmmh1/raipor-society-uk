@@ -23,3 +23,12 @@ lint:
 
 dev:
 	docker compose up --build
+
+web-install:
+	cd web && npm install --no-audit --no-fund
+
+web-dev:
+	cd web && npm run dev
+
+web-build:
+	cd web && npm run build

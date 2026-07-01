@@ -7,17 +7,20 @@ Production-ready, open-source monorepo scaffold for the Raipor Society UK digita
 - Django backend API with clean architecture boundaries (domain/application/infrastructure/presentation)
 - PostgreSQL + Redis + Celery foundation
 - Docker-first local and deployment workflow
+- Next.js web frontend (public site + member portal + admin portal)
 - Expo React Native mobile shell
 - MinIO object storage
 - AI runtime placeholder with Ollama + RAG settings
 - Monitoring stack (Prometheus, Grafana, Loki)
 - GitHub CI pipeline and issue templates
+- Vercel web deployment and Cloudflare domain/edge blueprint
 - Executable module roadmap aligned to your plan
 
 ## Repository layout
 
 ```text
 backend/            Django API, domain apps, tests
+web/                Next.js website, member portal, admin portal
 mobile/             Expo React Native shell
 infra/              Docker, reverse proxy, monitoring config
 .github/            CI workflow and issue templates
@@ -93,3 +96,8 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) in sequence:
 9. Chat
 10. Voting
 11. Analytics
+
+## Web deployment references
+
+- Vercel + Cloudflare runbook: [docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md](docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md)
+- Web feature matrix: [docs/WEB_FEATURE_MATRIX.md](docs/WEB_FEATURE_MATRIX.md)

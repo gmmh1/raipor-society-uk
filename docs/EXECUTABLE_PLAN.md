@@ -13,9 +13,10 @@ This plan converts the strategy into implementable engineering milestones with d
 
 ### Deliverables
 
-- Monorepo structure with backend/mobile/infra/docs.
+- Monorepo structure with backend/web/mobile/infra/docs.
 - Dockerized local stack: PostgreSQL, Redis, Django, Celery, MinIO, monitoring.
 - Django project baseline with health endpoint.
+- Next.js web baseline with public, member, and admin route groups.
 - CI pipeline for lint and test.
 - Secret management baseline with `.env` and `.env.example`.
 
@@ -40,6 +41,7 @@ This plan converts the strategy into implementable engineering milestones with d
 - Role-based API access enforced and tested.
 - Membership status transitions are auditable.
 - Admin workflows for membership are operational.
+- Member portal workflow parity between web and mobile for core use-cases.
 
 ## Phase 3: Events + Notifications (Weeks 11-14)
 
@@ -53,6 +55,7 @@ This plan converts the strategy into implementable engineering milestones with d
 
 - Event registration load-tested for expected demand.
 - Notification retries and failure logs in place.
+- Public website events and program pages connected to backend data contracts.
 
 ## Phase 4: Finance + Shop (Weeks 15-18)
 
