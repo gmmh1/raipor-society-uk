@@ -32,3 +32,9 @@ web-dev:
 
 web-build:
 	cd web && npm run build
+
+local-handoff:
+	pwsh -File scripts/export-local-handoff.ps1
+
+local-qwen:
+	pwsh -File scripts/local-qwen-session.ps1

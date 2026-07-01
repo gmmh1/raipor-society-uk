@@ -101,3 +101,32 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) in sequence:
 
 - Vercel + Cloudflare runbook: [docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md](docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md)
 - Web feature matrix: [docs/WEB_FEATURE_MATRIX.md](docs/WEB_FEATURE_MATRIX.md)
+
+## Local model continuation (Qwen2.5-Coder)
+
+Use this workflow to let a local model continue the same project with the same architecture constraints:
+
+1. Generate handoff context:
+
+```bash
+make local-handoff
+```
+
+Or generate handoff context and a ready starter prompt in one step:
+
+```bash
+make local-qwen
+```
+
+2. Load these files into your local coding model session:
+
+- `CLAUDE.md`
+- `docs/EXECUTABLE_PLAN.md`
+- `docs/DEPLOYMENT_WEB_VERCEL_CLOUDFLARE.md`
+- `docs/QWEN_LOCAL_SYSTEM_PROMPT.md`
+- `docs/LOCAL_MODEL_SESSION_CONTEXT.md`
+- `docs/LOCAL_MODEL_START_PROMPT.md` (if generated with `make local-qwen`)
+
+3. Follow the full guide:
+
+- [docs/LOCAL_MODEL_CONTINUATION.md](docs/LOCAL_MODEL_CONTINUATION.md)

@@ -26,6 +26,10 @@ dist/
 .env.*
 !.env.example
 
+# Local model generated artifacts
+docs/LOCAL_MODEL_SESSION_CONTEXT.md
+docs/LOCAL_MODEL_START_PROMPT.md
+
 # IDE / OS
 .vscode/
 .idea/
