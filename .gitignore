@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.log
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Django static/media build artifacts
+backend/staticfiles/
+backend/media/
+
+# Node / Expo
+node_modules/
+.expo/
+.expo-shared/
+dist/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker
+data/postgres/
+data/minio/
