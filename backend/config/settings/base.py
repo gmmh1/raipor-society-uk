@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.notifications",
     "apps.finance",
+    "apps.shop",
 ]
 
 MIDDLEWARE = [

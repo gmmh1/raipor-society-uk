@@ -77,6 +77,8 @@ This plan converts the strategy into implementable engineering milestones with d
 
 - Finance core implemented in `apps.finance` with unified ledger entries, payment transaction model, idempotent webhook ingestion, and reconciliation summary API.
 - Added ADR: `docs/adr/0006-finance-ledger-payments-and-idempotent-webhooks.md`.
+- Shop core implemented in `apps.shop` with product catalog, inventory-aware order creation, and role-gated order lifecycle transitions.
+- Added ADR: `docs/adr/0007-shop-products-inventory-and-order-lifecycle.md`.
 
 ### Deliverables
 

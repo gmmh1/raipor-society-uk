@@ -1,0 +1,59 @@
+from rest_framework import serializers
+
+from apps.shop.domain.types import ORDER_STATUS_CHOICES
+from apps.shop.models import Product, ShopOrder, ShopOrderItem
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = [
+            "id",
+            "name",
+            "description",
+            "sku",
+            "price_minor",
+            "currency",
+            "inventory_count",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class OrderItemRequestSerializer(serializers.Serializer):
+    product_id = serializers.UUIDField()
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class OrderCreateSerializer(serializers.Serializer):
+    items = OrderItemRequestSerializer(many=True, allow_empty=False)
+
+
+class ShopOrderItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.UUIDField(source="product.id", read_only=True)
+
+    class Meta:
+        model = ShopOrderItem
+        fields = ["id", "product_id", "quantity", "unit_price_minor", "line_total_minor"]
+
+
+class ShopOrderSerializer(serializers.ModelSerializer):
+    items = ShopOrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ShopOrder
+        fields = [
+            "id",
+            "status",
+            "total_minor",
+            "currency",
+            "items",
+            "created_at",
+            "updated_at",
+        ]
+
+
+class OrderTransitionSerializer(serializers.Serializer):
+    order_id = serializers.UUIDField()
+    to_status = serializers.ChoiceField(choices=[choice[0] for choice in ORDER_STATUS_CHOICES])
