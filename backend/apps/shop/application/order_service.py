@@ -9,6 +9,15 @@ class ShopError(ValueError):
 
 
 @transaction.atomic
+def deactivate_product(*, product: Product) -> Product:
+    """Soft-delete a product. Historical ShopOrderItem rows are preserved via PROTECT."""
+    product.is_active = False
+    product.save(update_fields=["is_active", "updated_at"])
+    product.delete()  # SoftDeleteModel.delete() sets deleted_at, does not remove the row
+    return product
+
+
+@transaction.atomic
 def create_order_for_user(*, user, items: list[dict]) -> ShopOrder:
     if not items:
         raise ShopError("Order must include at least one item.")

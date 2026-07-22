@@ -90,3 +90,57 @@ def test_order_transition_role_gate_and_valid_transition():
     assert allowed.status_code == 200
     order.refresh_from_db()
     assert order.status == "paid"
+
+
+@pytest.mark.django_db
+def test_deactivate_product_soft_deletes_and_preserves_order_history():
+    admin = User.objects.create_user(username="shop-admin-1", password="pass123")
+    role = Role.objects.create(code="admin", name="Admin")
+    admin.roles.add(role)
+
+    customer = User.objects.create_user(username="shop-user-4", password="pass123")
+    product = Product.objects.create(
+        name="Retiring Item", sku="SKU-RETIRE", price_minor=500, inventory_count=5, is_active=True
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=customer)
+    order_response = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 1}]},
+        format="json",
+    )
+    assert order_response.status_code == 201
+
+    client.force_authenticate(user=admin)
+    deactivate_response = client.post(
+        reverse("shop-products-deactivate", kwargs={"product_id": product.id})
+    )
+    assert deactivate_response.status_code == 204
+
+    assert Product.objects.filter(id=product.id).count() == 0
+    soft_deleted = Product.all_objects.get(id=product.id)
+    assert soft_deleted.deleted_at is not None
+    assert soft_deleted.is_active is False
+
+    listing = client.get(reverse("shop-products-list-create"))
+    assert all(item["sku"] != "SKU-RETIRE" for item in listing.json())
+
+    client.force_authenticate(user=customer)
+    order_response = client.get(reverse("shop-orders-me"))
+    assert order_response.json()[0]["items"][0]["product_id"] == str(product.id)
+
+
+@pytest.mark.django_db
+def test_deactivate_product_requires_role():
+    user = User.objects.create_user(username="shop-user-5", password="pass123")
+    product = Product.objects.create(
+        name="Item", sku="SKU-PROTECTED", price_minor=100, inventory_count=1, is_active=True
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+    response = client.post(reverse("shop-products-deactivate", kwargs={"product_id": product.id}))
+
+    assert response.status_code == 403
+    assert Product.objects.filter(id=product.id).count() == 1

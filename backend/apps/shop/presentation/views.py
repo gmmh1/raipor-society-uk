@@ -4,7 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.identity.permissions import HasAnyRole
-from apps.shop.application.order_service import ShopError, create_order_for_user, transition_order_status
+from apps.shop.application.order_service import (
+    ShopError,
+    create_order_for_user,
+    deactivate_product,
+    transition_order_status,
+)
 from apps.shop.models import Product, ShopOrder
 from apps.shop.presentation.serializers import (
     OrderCreateSerializer,
@@ -30,6 +35,20 @@ class ProductListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
         return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
+
+
+class ProductDeactivateView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "volunteer")
+
+    def post(self, _request, product_id):
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        deactivate_product(product=product)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class OrderCreateView(APIView):

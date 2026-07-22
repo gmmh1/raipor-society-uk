@@ -3,11 +3,11 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from apps.common.models import SoftDeleteModel, TimeStampedModel, UUIDModel
 from apps.shop.domain.types import ORDER_PENDING, ORDER_STATUS_CHOICES
 
 
-class Product(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Product(UUIDModel, TimeStampedModel, SoftDeleteModel):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     sku = models.CharField(max_length=64, unique=True)
@@ -15,8 +15,6 @@ class Product(models.Model):
     currency = models.CharField(max_length=8, default="GBP")
     inventory_count = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "shop_product"
@@ -25,14 +23,12 @@ class Product(models.Model):
         ]
 
 
-class ShopOrder(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class ShopOrder(UUIDModel, TimeStampedModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shop_orders")
     status = models.CharField(max_length=32, choices=ORDER_STATUS_CHOICES, default=ORDER_PENDING)
     total_minor = models.BigIntegerField(default=0)
     currency = models.CharField(max_length=8, default="GBP")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    payment_reference = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
     class Meta:
         db_table = "shop_order"
