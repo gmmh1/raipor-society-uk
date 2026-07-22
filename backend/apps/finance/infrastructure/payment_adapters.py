@@ -1,3 +1,7 @@
+import requests
+import stripe
+from django.conf import settings
+
 from apps.finance.domain.types import (
     PAYMENT_FAILED,
     PAYMENT_REFUNDED,
@@ -5,6 +9,75 @@ from apps.finance.domain.types import (
     PROVIDER_PAYPAL,
     PROVIDER_STRIPE,
 )
+
+
+class WebhookVerificationError(ValueError):
+    pass
+
+
+def verify_stripe_signature(*, payload_body: bytes, sig_header: str) -> dict:
+    """Verify a Stripe webhook using the official SDK. Returns the verified event dict.
+
+    Fails closed: an unset secret outside DEBUG is treated as a configuration error,
+    never as "skip verification".
+    """
+    secret = settings.STRIPE_WEBHOOK_SECRET
+    if not secret:
+        if settings.DEBUG:
+            raise WebhookVerificationError(
+                "STRIPE_WEBHOOK_SECRET is not configured; refusing to accept unverified webhook."
+            )
+        raise RuntimeError("STRIPE_WEBHOOK_SECRET must be set outside DEBUG.")
+
+    try:
+        event = stripe.Webhook.construct_event(payload_body, sig_header, secret)
+    except (ValueError, stripe.error.SignatureVerificationError) as exc:
+        raise WebhookVerificationError(f"Stripe signature verification failed: {exc}") from exc
+    return event
+
+
+def verify_paypal_signature(*, headers: dict, payload_body: bytes, transmission_data: dict) -> bool:
+    """Verify a PayPal webhook via PayPal's server-side verify-webhook-signature API.
+
+    ``transmission_data`` must contain: transmission_id, transmission_time, cert_url,
+    auth_algo, transmission_sig (all read from the incoming request headers).
+    """
+    webhook_id = settings.PAYPAL_WEBHOOK_ID
+    if not webhook_id:
+        if settings.DEBUG:
+            raise WebhookVerificationError(
+                "PAYPAL_WEBHOOK_ID is not configured; refusing to accept unverified webhook."
+            )
+        raise RuntimeError("PAYPAL_WEBHOOK_ID must be set outside DEBUG.")
+
+    token = _get_paypal_access_token()
+    response = requests.post(
+        f"{settings.PAYPAL_API_BASE}/v1/notifications/verify-webhook-signature",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "transmission_id": transmission_data.get("transmission_id"),
+            "transmission_time": transmission_data.get("transmission_time"),
+            "cert_url": transmission_data.get("cert_url"),
+            "auth_algo": transmission_data.get("auth_algo"),
+            "transmission_sig": transmission_data.get("transmission_sig"),
+            "webhook_id": webhook_id,
+            "webhook_event": payload_body,
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json().get("verification_status") == "SUCCESS"
+
+
+def _get_paypal_access_token() -> str:
+    response = requests.post(
+        f"{settings.PAYPAL_API_BASE}/v1/oauth2/token",
+        auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
+        data={"grant_type": "client_credentials"},
+        timeout=10,
+    )
+    response.raise_for_status()
+    return response.json()["access_token"]
 
 
 def parse_webhook_payload(provider: str, payload: dict) -> dict:

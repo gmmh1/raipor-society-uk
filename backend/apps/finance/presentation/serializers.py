@@ -1,10 +1,6 @@
 from rest_framework import serializers
 
-from apps.finance.domain.types import (
-    DIRECTION_CHOICES,
-    ENTRY_TYPE_CHOICES,
-    PROVIDER_CHOICES,
-)
+from apps.finance.domain.types import DIRECTION_CHOICES, ENTRY_TYPE_CHOICES
 from apps.finance.models import LedgerEntry
 
 
@@ -32,8 +28,3 @@ class LedgerEntryCreateSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True, max_length=255)
     reference = serializers.CharField(required=False, allow_blank=True, max_length=128)
     metadata = serializers.JSONField(required=False)
-
-
-class PaymentWebhookSerializer(serializers.Serializer):
-    provider = serializers.ChoiceField(choices=[choice[0] for choice in PROVIDER_CHOICES])
-    payload = serializers.JSONField()

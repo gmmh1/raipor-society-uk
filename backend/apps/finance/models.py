@@ -1,8 +1,7 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
 
+from apps.common.models import TimeStampedModel, UUIDModel
 from apps.finance.domain.types import (
     DIRECTION_CHOICES,
     ENTRY_TYPE_CHOICES,
@@ -12,8 +11,7 @@ from apps.finance.domain.types import (
 )
 
 
-class LedgerEntry(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class LedgerEntry(UUIDModel):
     entry_type = models.CharField(max_length=32, choices=ENTRY_TYPE_CHOICES)
     direction = models.CharField(max_length=16, choices=DIRECTION_CHOICES)
     amount_minor = models.BigIntegerField()
@@ -38,8 +36,7 @@ class LedgerEntry(models.Model):
         ]
 
 
-class PaymentTransaction(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class PaymentTransaction(UUIDModel, TimeStampedModel):
     provider = models.CharField(max_length=32, choices=PROVIDER_CHOICES)
     external_id = models.CharField(max_length=128)
     status = models.CharField(max_length=32, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_PENDING)
@@ -53,21 +50,20 @@ class PaymentTransaction(models.Model):
         related_name="payment_transactions",
     )
     payload = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "finance_payment_transaction"
         constraints = [
-            models.UniqueConstraint(fields=["provider", "external_id"], name="uniq_payment_provider_external"),
+            models.UniqueConstraint(
+                fields=["provider", "external_id"], name="uniq_payment_provider_external"
+            ),
         ]
         indexes = [
             models.Index(fields=["status", "created_at"]),
         ]
 
 
-class PaymentWebhookEvent(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class PaymentWebhookEvent(UUIDModel):
     provider = models.CharField(max_length=32, choices=PROVIDER_CHOICES)
     event_id = models.CharField(max_length=128)
     event_type = models.CharField(max_length=128, blank=True)
