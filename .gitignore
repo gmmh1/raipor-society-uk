@@ -10,6 +10,8 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+.venv/
+venv/
 
 # Django static/media build artifacts
 backend/staticfiles/

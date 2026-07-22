@@ -81,21 +81,25 @@ git push -u origin main
 - Avoid vendor lock-in and paid dependencies where open-source alternatives exist.
 - Track architecture decisions in `docs/adr/`.
 
-## Next implementation targets
+## Module status
 
-Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) in sequence:
+Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) for full deliverables/acceptance criteria per phase. Current state:
 
-1. Authentication + RBAC
-2. Membership
-3. Events
-4. Notifications
-5. Finance
-6. Shop
-7. Documents
-8. AI Knowledge Assistant
-9. Chat
-10. Voting
-11. Analytics
+| Module | Status |
+|---|---|
+| 1. Authentication + RBAC | Done — JWT login/refresh/logout, registration + email verification, password reset, rate limiting, audited role assignment (ADR 0002, 0008) |
+| 2. Membership | Partial — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation done (ADR 0009); DOB not yet collected at registration so the safeguarding gate needs that to be effective for new members |
+| 3. Events | Partial — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) done (ADR 0010) |
+| 4. Notifications | Partial — email delivery real, Celery beat schedule configured; push/WhatsApp adapters outstanding (need a `phone_number` field and, for push, a device-token model) |
+| 5. Finance | Partial — ledger, Stripe/PayPal webhook signature verification done; outbound checkout/payment-intent creation, receipts/invoices outstanding |
+| 6. Shop | Partial — catalog, inventory-aware orders, soft-deletable products done; Shop↔Finance payment integration outstanding |
+| 7. Documents | Not started |
+| 8. AI Knowledge Assistant | Not started |
+| 9. Chat | Not started |
+| 10. Voting | Not started |
+| 11. Analytics | Not started |
+
+Web (`web/app`) and mobile (`mobile/`) have no API integration yet regardless of backend module status.
 
 ## Web deployment references
 

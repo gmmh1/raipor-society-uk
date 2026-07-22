@@ -37,6 +37,10 @@ jobs:
       ALLOWED_HOSTS: localhost,127.0.0.1
       CELERY_BROKER_URL: redis://localhost:6379/0
       CELERY_RESULT_BACKEND: redis://localhost:6379/1
+      STRIPE_WEBHOOK_SECRET: whsec_test_secret
+      PAYPAL_WEBHOOK_ID: test-webhook-id
+      PAYPAL_CLIENT_ID: test-client-id
+      PAYPAL_CLIENT_SECRET: test-client-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
