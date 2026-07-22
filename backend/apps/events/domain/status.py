@@ -1,9 +1,11 @@
 REG_STATUS_REGISTERED = "registered"
+REG_STATUS_WAITLISTED = "waitlisted"
 REG_STATUS_CANCELLED = "cancelled"
 REG_STATUS_ATTENDED = "attended"
 
 REGISTRATION_STATUS_CHOICES = (
     (REG_STATUS_REGISTERED, "Registered"),
+    (REG_STATUS_WAITLISTED, "Waitlisted"),
     (REG_STATUS_CANCELLED, "Cancelled"),
     (REG_STATUS_ATTENDED, "Attended"),
 )

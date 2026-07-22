@@ -3,11 +3,11 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from apps.events.domain.status import REGISTRATION_STATUS_CHOICES, REG_STATUS_REGISTERED
+from apps.common.models import SoftDeleteModel, TimeStampedModel, UUIDModel
+from apps.events.domain.status import REG_STATUS_REGISTERED, REGISTRATION_STATUS_CHOICES
 
 
-class Event(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Event(UUIDModel, TimeStampedModel, SoftDeleteModel):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     starts_at = models.DateTimeField()
@@ -22,8 +22,6 @@ class Event(models.Model):
         on_delete=models.SET_NULL,
         related_name="events_created",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "events_event"
@@ -33,8 +31,7 @@ class Event(models.Model):
         ]
 
 
-class EventRegistration(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class EventRegistration(UUIDModel, TimeStampedModel):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="registrations")
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -55,8 +52,6 @@ class EventRegistration(models.Model):
         on_delete=models.SET_NULL,
         related_name="event_checkins_recorded",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "events_registration"

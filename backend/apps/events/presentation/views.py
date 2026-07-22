@@ -3,7 +3,13 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.events.application.event_service import EventServiceError, check_in_registration, register_for_event
+from apps.events.application.event_service import (
+    EventServiceError,
+    cancel_event,
+    cancel_registration,
+    check_in_registration,
+    register_for_event,
+)
 from apps.events.models import Event, EventRegistration
 from apps.events.presentation.serializers import (
     EventCheckInRequestSerializer,
@@ -32,6 +38,24 @@ class EventListCreateView(APIView):
         return Response(EventSerializer(event).data, status=status.HTTP_201_CREATED)
 
 
+class EventCancelView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "volunteer")
+
+    def post(self, request, event_id):
+        try:
+            event = Event.objects.get(id=event_id)
+        except Event.DoesNotExist:
+            return Response({"detail": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            cancelled = cancel_event(event, request.user)
+        except EventServiceError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(EventSerializer(cancelled).data)
+
+
 class EventRegisterView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -53,6 +77,23 @@ class EventRegisterView(APIView):
         return Response(EventRegistrationSerializer(registration).data, status=status.HTTP_201_CREATED)
 
 
+class EventCancelRegistrationView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, registration_id):
+        try:
+            registration = EventRegistration.objects.get(id=registration_id)
+        except EventRegistration.DoesNotExist:
+            return Response({"detail": "Registration not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            cancelled = cancel_registration(registration, request.user)
+        except EventServiceError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(EventRegistrationSerializer(cancelled).data)
+
+
 class EventCheckInView(APIView):
     permission_classes = [IsAuthenticated, HasAnyRole]
     required_roles = ("admin", "volunteer")
@@ -61,9 +102,14 @@ class EventCheckInView(APIView):
         serializer = EventCheckInRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        registration_id = serializer.validated_data["registration_id"]
+        registration_id = serializer.validated_data.get("registration_id")
+        qr_token = serializer.validated_data.get("qr_token")
+
         try:
-            registration = EventRegistration.objects.get(id=registration_id)
+            if registration_id:
+                registration = EventRegistration.objects.get(id=registration_id)
+            else:
+                registration = EventRegistration.objects.get(qr_token=qr_token)
         except EventRegistration.DoesNotExist:
             return Response({"detail": "Registration not found."}, status=status.HTTP_404_NOT_FOUND)
 

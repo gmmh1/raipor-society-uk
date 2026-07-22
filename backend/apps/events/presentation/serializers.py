@@ -49,4 +49,14 @@ class EventRegistrationRequestSerializer(serializers.Serializer):
 
 
 class EventCheckInRequestSerializer(serializers.Serializer):
-    registration_id = serializers.UUIDField()
+    registration_id = serializers.UUIDField(required=False)
+    qr_token = serializers.UUIDField(required=False)
+
+    def validate(self, attrs):
+        has_registration_id = bool(attrs.get("registration_id"))
+        has_qr_token = bool(attrs.get("qr_token"))
+        if has_registration_id == has_qr_token:
+            raise serializers.ValidationError(
+                "Provide exactly one of registration_id or qr_token."
+            )
+        return attrs
