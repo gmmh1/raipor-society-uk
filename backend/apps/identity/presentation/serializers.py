@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.identity.application.rbac_service import list_role_codes
@@ -38,9 +39,15 @@ class RegisterRequestSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    date_of_birth = serializers.DateField()
 
     def validate_password(self, value: str) -> str:
         validate_password(value)
+        return value
+
+    def validate_date_of_birth(self, value):
+        if value > timezone.localdate():
+            raise serializers.ValidationError("Date of birth cannot be in the future.")
         return value
 
 

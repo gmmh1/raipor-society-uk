@@ -1,5 +1,5 @@
 import secrets
-from datetime import timedelta
+from datetime import date, timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -23,6 +23,7 @@ def register_user(
     username: str,
     email: str,
     password: str,
+    date_of_birth: date,
     first_name: str = "",
     last_name: str = "",
 ) -> User:
@@ -36,6 +37,7 @@ def register_user(
         email=email,
         first_name=first_name,
         last_name=last_name,
+        date_of_birth=date_of_birth,
         is_active=False,
     )
     user.set_password(password)

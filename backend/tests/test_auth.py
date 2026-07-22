@@ -28,6 +28,7 @@ def test_register_verify_login_refresh_logout_flow():
             "username": "newmember",
             "email": "newmember@example.com",
             "password": "correct-horse-battery",
+            "date_of_birth": "1990-05-15",
         },
         format="json",
     )
@@ -107,10 +108,50 @@ def test_register_rejects_duplicate_username():
 
     response = client.post(
         reverse("identity-register"),
-        data={"username": "taken", "email": "other@example.com", "password": "another-strong-pass"},
+        data={
+            "username": "taken",
+            "email": "other@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "1990-05-15",
+        },
         format="json",
     )
     assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_register_requires_date_of_birth():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "nodobuser",
+            "email": "nodob@example.com",
+            "password": "another-strong-pass",
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "date_of_birth" in response.json()
+
+
+@pytest.mark.django_db
+def test_register_rejects_future_date_of_birth():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "futuredobuser",
+            "email": "futuredob@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "2999-01-01",
+        },
+        format="json",
+    )
+    assert response.status_code == 400
+    assert "date_of_birth" in response.json()
 
 
 @pytest.mark.django_db
@@ -178,6 +219,7 @@ def test_register_throttles_after_limit():
                 "username": f"throttleuser{i}",
                 "email": f"throttle{i}@example.com",
                 "password": "some-strong-password-1",
+                "date_of_birth": "1990-05-15",
             },
             format="json",
         ).status_code

@@ -41,9 +41,10 @@ class User(UUIDModel, TimeStampedModel, AbstractUser):
     def is_minor(self) -> bool:
         """True only when date_of_birth is known and under the UK age of majority.
 
-        Unknown date_of_birth is treated as not-minor (unchanged pre-existing
-        behavior) rather than assumed either way; DOB collection at registration is
-        a follow-up needed to make safeguarding gates effective for new members.
+        Unknown date_of_birth is treated as not-minor. Registration now requires
+        date_of_birth for new users, but it remains nullable on this model for
+        users created before that requirement existed (or via admin/management
+        commands), so this fallback stays in place.
         """
         if self.date_of_birth is None:
             return False

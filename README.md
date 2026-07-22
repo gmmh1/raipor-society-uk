@@ -88,7 +88,7 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) for full deliverables/
 | Module | Status |
 |---|---|
 | 1. Authentication + RBAC | Done — JWT login/refresh/logout, registration + email verification, password reset, rate limiting, audited role assignment (ADR 0002, 0008) |
-| 2. Membership | Partial — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation done (ADR 0009); DOB not yet collected at registration so the safeguarding gate needs that to be effective for new members |
+| 2. Membership | Partial — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation, and required DOB at registration done (ADR 0009) |
 | 3. Events | Partial — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) done (ADR 0010) |
 | 4. Notifications | Partial — email delivery real, Celery beat schedule configured; push/WhatsApp adapters outstanding (need a `phone_number` field and, for push, a device-token model) |
 | 5. Finance | Partial — ledger, Stripe/PayPal webhook signature verification done; outbound checkout/payment-intent creation, receipts/invoices outstanding |
