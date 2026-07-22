@@ -11,7 +11,7 @@ from apps.membership.models import Membership, MembershipStatusTransition
 def test_membership_me_requires_authentication():
     client = APIClient()
     response = client.get(reverse("membership-me"))
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

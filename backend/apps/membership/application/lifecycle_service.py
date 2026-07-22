@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from apps.membership.application.guardian_service import has_active_consent
 from apps.membership.domain.status import ALLOWED_TRANSITIONS, STATUS_ACTIVE, STATUS_EXPIRED
 from apps.membership.models import Membership, MembershipStatusTransition
 from apps.notifications.application.notification_orchestrator import enqueue_notification
@@ -33,6 +34,16 @@ def transition_membership_status(
     if new_status not in allowed:
         raise MembershipLifecycleError(
             f"Invalid transition from '{current_status}' to '{new_status}'."
+        )
+
+    activating_unconsented_minor = (
+        new_status == STATUS_ACTIVE
+        and membership.user.is_minor
+        and not has_active_consent(child=membership.user)
+    )
+    if activating_unconsented_minor:
+        raise MembershipLifecycleError(
+            "A minor's membership cannot be activated without recorded guardian consent."
         )
 
     membership.status = new_status
