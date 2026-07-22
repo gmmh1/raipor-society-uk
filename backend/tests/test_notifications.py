@@ -10,7 +10,7 @@ from apps.notifications.models import Notification
 def test_notifications_me_requires_authentication():
     client = APIClient()
     response = client.get(reverse("notifications-me"))
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

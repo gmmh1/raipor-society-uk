@@ -2,7 +2,6 @@ from celery import shared_task
 from django.utils import timezone
 
 from apps.notifications.application.dispatch_service import dispatch_notification
-from apps.notifications.application.notification_orchestrator import enqueue_notification
 from apps.notifications.domain.types import CHANNEL_EMAIL
 from apps.notifications.models import Notification
 
@@ -13,6 +12,7 @@ def enqueue_event_reminders_task() -> int:
 
     from apps.events.domain.status import REG_STATUS_REGISTERED
     from apps.events.models import EventRegistration
+    from apps.notifications.application.notification_orchestrator import enqueue_notification
 
     now = timezone.now()
     upcoming = now + timedelta(hours=24)
@@ -41,6 +41,7 @@ def enqueue_event_summary_task() -> int:
 
     from apps.events.domain.status import REG_STATUS_ATTENDED
     from apps.events.models import EventRegistration
+    from apps.notifications.application.notification_orchestrator import enqueue_notification
 
     cutoff = timezone.now() - timedelta(hours=24)
     attended = EventRegistration.objects.filter(

@@ -1,13 +1,11 @@
-import uuid
-
 from django.conf import settings
 from django.db import models
 
+from apps.common.models import TimeStampedModel, UUIDModel
 from apps.notifications.domain.types import CHANNEL_CHOICES, STATUS_CHOICES, STATUS_QUEUED
 
 
-class Notification(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+class Notification(UUIDModel, TimeStampedModel):
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -22,8 +20,6 @@ class Notification(models.Model):
     status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_QUEUED)
     error_message = models.TextField(blank=True)
     sent_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "notifications_notification"

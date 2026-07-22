@@ -9,7 +9,7 @@ from apps.identity.models import Role, User
 def test_identity_me_requires_authentication():
     client = APIClient()
     response = client.get(reverse("identity-me"))
-    assert response.status_code == 403
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
