@@ -8,10 +8,13 @@ from apps.shop.application.order_service import (
     ShopError,
     create_order_for_user,
     deactivate_product,
+    initiate_order_checkout,
     transition_order_status,
 )
 from apps.shop.models import Product, ShopOrder
 from apps.shop.presentation.serializers import (
+    OrderCheckoutRequestSerializer,
+    OrderCheckoutSerializer,
     OrderCreateSerializer,
     OrderTransitionSerializer,
     ProductSerializer,
@@ -72,6 +75,32 @@ class MyOrdersView(APIView):
     def get(self, request):
         orders = ShopOrder.objects.filter(user=request.user).prefetch_related("items", "items__product")
         return Response(ShopOrderSerializer(orders, many=True).data)
+
+
+class OrderCheckoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, order_id):
+        try:
+            order = ShopOrder.objects.get(id=order_id, user=request.user)
+        except ShopOrder.DoesNotExist:
+            return Response({"detail": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = OrderCheckoutRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            result = initiate_order_checkout(
+                order=order,
+                provider=serializer.validated_data["provider"],
+                payer=request.user,
+                success_url=serializer.validated_data["success_url"],
+                cancel_url=serializer.validated_data["cancel_url"],
+            )
+        except ShopError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(OrderCheckoutSerializer(result).data, status=status.HTTP_201_CREATED)
 
 
 class OrderTransitionView(APIView):

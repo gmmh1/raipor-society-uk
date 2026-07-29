@@ -57,3 +57,15 @@ class ShopOrderSerializer(serializers.ModelSerializer):
 class OrderTransitionSerializer(serializers.Serializer):
     order_id = serializers.UUIDField()
     to_status = serializers.ChoiceField(choices=[choice[0] for choice in ORDER_STATUS_CHOICES])
+
+
+class OrderCheckoutRequestSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=["stripe", "paypal"])
+    success_url = serializers.URLField()
+    cancel_url = serializers.URLField()
+
+
+class OrderCheckoutSerializer(serializers.Serializer):
+    provider = serializers.CharField()
+    external_id = serializers.CharField()
+    redirect_url = serializers.CharField()

@@ -1,9 +1,14 @@
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 
+from apps.finance.application.payment_service import process_webhook
+from apps.finance.models import PaymentTransaction
 from apps.identity.models import Role, User
+from apps.shop.application.order_service import cancel_stale_pending_orders
 from apps.shop.models import Product, ShopOrder
+from apps.shop.tasks import cancel_stale_pending_orders_task
 
 
 @pytest.mark.django_db
@@ -144,3 +149,171 @@ def test_deactivate_product_requires_role():
 
     assert response.status_code == 403
     assert Product.objects.filter(id=product.id).count() == 1
+
+
+@pytest.mark.django_db
+def test_cancelling_order_restores_inventory():
+    customer = User.objects.create_user(username="shop-user-6", password="pass123")
+    admin = User.objects.create_user(username="shop-admin-2", password="pass123")
+    role = Role.objects.create(code="admin", name="Admin")
+    admin.roles.add(role)
+
+    product = Product.objects.create(
+        name="Item", sku="SKU-CANCEL", price_minor=500, inventory_count=5, is_active=True
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=customer)
+    order_response = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 3}]},
+        format="json",
+    )
+    order_id = order_response.json()["id"]
+    product.refresh_from_db()
+    assert product.inventory_count == 2
+
+    client.force_authenticate(user=admin)
+    cancel_response = client.post(
+        reverse("shop-orders-transition"),
+        data={"order_id": order_id, "to_status": "cancelled"},
+        format="json",
+    )
+    assert cancel_response.status_code == 200
+    product.refresh_from_db()
+    assert product.inventory_count == 5
+
+
+@pytest.mark.django_db
+def test_checkout_endpoint_initiates_payment(monkeypatch):
+    monkeypatch.setattr(
+        "apps.finance.application.payment_service.create_stripe_checkout_session",
+        lambda **kwargs: {"external_id": "cs_shop_1", "redirect_url": "https://stripe.example/pay"},
+    )
+
+    customer = User.objects.create_user(username="shop-user-7", password="pass123")
+    product = Product.objects.create(
+        name="Item", sku="SKU-CHECKOUT", price_minor=1000, inventory_count=5, is_active=True
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=customer)
+    order_response = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 1}]},
+        format="json",
+    )
+    order_id = order_response.json()["id"]
+
+    checkout_response = client.post(
+        reverse("shop-orders-checkout", kwargs={"order_id": order_id}),
+        data={
+            "provider": "stripe",
+            "success_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel",
+        },
+        format="json",
+    )
+
+    assert checkout_response.status_code == 201
+    assert checkout_response.json()["redirect_url"] == "https://stripe.example/pay"
+    tx = PaymentTransaction.objects.get(external_id="cs_shop_1")
+    assert tx.payload["entry_type"] == "shop_sale"
+
+    order = ShopOrder.objects.get(id=order_id)
+    assert tx.payload["reference"] == str(order.payment_reference)
+
+
+@pytest.mark.django_db
+def test_checkout_endpoint_rejects_other_users_order():
+    owner = User.objects.create_user(username="shop-user-8", password="pass123")
+    stranger = User.objects.create_user(username="shop-user-9", password="pass123")
+    order = ShopOrder.objects.create(user=owner, status="pending", total_minor=500, currency="GBP")
+
+    client = APIClient()
+    client.force_authenticate(user=stranger)
+    response = client.post(
+        reverse("shop-orders-checkout", kwargs={"order_id": order.id}),
+        data={
+            "provider": "stripe",
+            "success_url": "https://example.com/success",
+            "cancel_url": "https://example.com/cancel",
+        },
+        format="json",
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_stripe_webhook_marks_shop_order_paid():
+    customer = User.objects.create_user(username="shop-user-10", password="pass123")
+    order = ShopOrder.objects.create(
+        user=customer, status="pending", total_minor=5000, currency="GBP"
+    )
+    PaymentTransaction.objects.create(
+        provider="stripe",
+        external_id="cs_shop_paid_1",
+        status="pending",
+        amount_minor=5000,
+        currency="GBP",
+        payer=customer,
+        payload={
+            "entry_type": "shop_sale",
+            "description": f"Shop order {order.id}",
+            "reference": str(order.payment_reference),
+        },
+    )
+
+    payload = {
+        "id": "evt_shop_1",
+        "type": "checkout.session.completed",
+        "data": {
+            "object": {
+                "id": "cs_shop_paid_1",
+                "amount_total": 5000,
+                "currency": "gbp",
+                "status": "complete",
+            }
+        },
+    }
+    process_webhook(provider="stripe", payload=payload)
+
+    order.refresh_from_db()
+    assert order.status == "paid"
+
+
+@pytest.mark.django_db
+def test_cancel_stale_pending_orders_releases_inventory_and_cancels():
+    customer = User.objects.create_user(username="shop-user-11", password="pass123")
+    product = Product.objects.create(
+        name="Item", sku="SKU-STALE", price_minor=500, inventory_count=5, is_active=True
+    )
+    order = ShopOrder.objects.create(
+        user=customer, status="pending", total_minor=1000, currency="GBP"
+    )
+    from apps.shop.models import ShopOrderItem
+
+    ShopOrderItem.objects.create(
+        order=order, product=product, quantity=2, unit_price_minor=500, line_total_minor=1000
+    )
+    product.inventory_count = 3
+    product.save(update_fields=["inventory_count"])
+
+    stale_time = timezone.now() - timezone.timedelta(minutes=45)
+    ShopOrder.objects.filter(id=order.id).update(created_at=stale_time)
+
+    count = cancel_stale_pending_orders()
+
+    assert count == 1
+    order.refresh_from_db()
+    product.refresh_from_db()
+    assert order.status == "cancelled"
+    assert product.inventory_count == 5
+
+
+@pytest.mark.django_db
+def test_cancel_stale_pending_orders_task_delegates_to_service():
+    customer = User.objects.create_user(username="shop-user-12", password="pass123")
+    ShopOrder.objects.create(user=customer, status="pending", total_minor=100, currency="GBP")
+
+    assert cancel_stale_pending_orders_task() == 0

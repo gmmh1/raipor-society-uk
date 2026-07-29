@@ -2,6 +2,7 @@ from django.urls import path
 
 from apps.shop.presentation.views import (
     MyOrdersView,
+    OrderCheckoutView,
     OrderCreateView,
     OrderTransitionView,
     ProductDeactivateView,
@@ -17,5 +18,10 @@ urlpatterns = [
     ),
     path("orders/", OrderCreateView.as_view(), name="shop-orders-create"),
     path("orders/me/", MyOrdersView.as_view(), name="shop-orders-me"),
+    path(
+        "orders/<uuid:order_id>/checkout/",
+        OrderCheckoutView.as_view(),
+        name="shop-orders-checkout",
+    ),
     path("orders/transitions/", OrderTransitionView.as_view(), name="shop-orders-transition"),
 ]
