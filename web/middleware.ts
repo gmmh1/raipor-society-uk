@@ -11,9 +11,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("raipor_session")?.value;
+  const token = request.cookies.get("raipor_access")?.value;
   if (!token) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("next", path);
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();

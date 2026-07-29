@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
-import { TopNav } from "@/components/TopNav";
-import { SiteFooter } from "@/components/SiteFooter";
 
 const display = Instrument_Serif({
   subsets: ["latin"],
@@ -32,11 +30,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
-      <body>
-        <TopNav />
-        {children}
-        <SiteFooter />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
