@@ -382,6 +382,48 @@ def test_webhook_uses_entry_type_recorded_at_checkout():
 
 
 @pytest.mark.django_db
+@override_settings(STRIPE_WEBHOOK_SECRET=STRIPE_TEST_SECRET)
+def test_webhook_membership_fee_payment_extends_membership_expiry():
+    from apps.membership.domain.status import STATUS_ACTIVE
+    from apps.membership.models import Membership, MembershipTier
+
+    payer = User.objects.create_user(username="checkout-user-4", password="pass123")
+    tier = MembershipTier.objects.create(
+        code="standard", name="Standard", price_minor=5000, billing_period_days=365
+    )
+    membership = Membership.objects.create(user=payer, status=STATUS_ACTIVE, tier=tier)
+    assert membership.expires_at is None
+
+    PaymentTransaction.objects.create(
+        provider="stripe",
+        external_id="cs_test_1",
+        status="pending",
+        amount_minor=5000,
+        currency="GBP",
+        payer=payer,
+        payload={
+            "entry_type": "membership_fee",
+            "description": "Dues",
+            "reference": str(membership.id),
+        },
+    )
+
+    client = APIClient()
+    body = _stripe_event_body("evt_membership_2")
+    header = _stripe_signature_header(body, STRIPE_TEST_SECRET)
+    response = client.post(
+        reverse("finance-webhook-stripe"),
+        data=body,
+        content_type="application/json",
+        HTTP_STRIPE_SIGNATURE=header,
+    )
+
+    assert response.status_code == 200
+    membership.refresh_from_db()
+    assert membership.expires_at is not None
+
+
+@pytest.mark.django_db
 def test_issue_receipt_generates_pdf_and_uploads_to_storage(monkeypatch):
     captured = {}
     monkeypatch.setattr(

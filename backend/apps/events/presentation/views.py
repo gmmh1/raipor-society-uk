@@ -16,6 +16,7 @@ from apps.events.presentation.serializers import (
     EventRegistrationRequestSerializer,
     EventRegistrationSerializer,
     EventSerializer,
+    MyEventRegistrationSerializer,
 )
 from apps.identity.permissions import HasAnyRole
 
@@ -75,6 +76,18 @@ class EventRegisterView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(EventRegistrationSerializer(registration).data, status=status.HTTP_201_CREATED)
+
+
+class MyEventRegistrationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        registrations = (
+            EventRegistration.objects.filter(user=request.user)
+            .select_related("event")
+            .order_by("-created_at")
+        )
+        return Response(MyEventRegistrationSerializer(registrations, many=True).data)
 
 
 class EventCancelRegistrationView(APIView):

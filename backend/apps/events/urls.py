@@ -6,11 +6,13 @@ from apps.events.presentation.views import (
     EventCheckInView,
     EventListCreateView,
     EventRegisterView,
+    MyEventRegistrationsView,
 )
 
 urlpatterns = [
     path("", EventListCreateView.as_view(), name="events-list-create"),
     path("register/", EventRegisterView.as_view(), name="events-register"),
+    path("registrations/me/", MyEventRegistrationsView.as_view(), name="events-registrations-me"),
     path("attendance/check-in/", EventCheckInView.as_view(), name="events-check-in"),
     path("<uuid:event_id>/cancel/", EventCancelView.as_view(), name="events-cancel"),
     path(

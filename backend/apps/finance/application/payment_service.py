@@ -148,6 +148,12 @@ def process_webhook(*, provider: str, payload: dict) -> tuple[PaymentWebhookEven
             from apps.shop.application.order_service import mark_order_paid_by_reference
 
             mark_order_paid_by_reference(payment_reference=checkout_reference)
+        elif ledger_entry_type == ENTRY_TYPE_MEMBERSHIP_FEE and checkout_reference:
+            from apps.membership.application.tier_service import (
+                extend_membership_from_payment,
+            )
+
+            extend_membership_from_payment(membership_id=checkout_reference)
     elif parsed["status"] in {PAYMENT_FAILED, PAYMENT_REFUNDED}:
         # Keep audit trail in transaction status; no credit entry written.
         pass

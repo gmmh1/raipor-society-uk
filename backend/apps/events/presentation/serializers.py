@@ -44,6 +44,13 @@ class EventRegistrationSerializer(serializers.ModelSerializer):
         ]
 
 
+class MyEventRegistrationSerializer(EventRegistrationSerializer):
+    event = EventSerializer(read_only=True)
+
+    class Meta(EventRegistrationSerializer.Meta):
+        fields = [*EventRegistrationSerializer.Meta.fields, "event"]
+
+
 class EventRegistrationRequestSerializer(serializers.Serializer):
     event_id = serializers.UUIDField()
 

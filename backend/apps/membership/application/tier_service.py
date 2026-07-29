@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
 
@@ -22,6 +23,13 @@ def assign_tier(*, membership: Membership, tier: MembershipTier) -> Membership:
     return membership
 
 
+def _extend_expiry(membership: Membership, tier: MembershipTier) -> None:
+    now = timezone.now()
+    base = membership.expires_at if membership.expires_at and membership.expires_at > now else now
+    membership.expires_at = base + timedelta(days=tier.billing_period_days)
+    membership.save(update_fields=["expires_at", "updated_at"])
+
+
 @transaction.atomic
 def record_dues_payment(*, membership: Membership, actor, reference: str = "") -> Membership:
     if membership.tier is None:
@@ -38,9 +46,19 @@ def record_dues_payment(*, membership: Membership, actor, reference: str = "") -
         metadata={"membership_id": str(membership.id), "tier": tier.code},
         actor=actor,
     )
-
-    now = timezone.now()
-    base = membership.expires_at if membership.expires_at and membership.expires_at > now else now
-    membership.expires_at = base + timedelta(days=tier.billing_period_days)
-    membership.save(update_fields=["expires_at", "updated_at"])
+    _extend_expiry(membership, tier)
     return membership
+
+
+def extend_membership_from_payment(*, membership_id: str) -> None:
+    """Called from the finance webhook once a ``membership_fee`` checkout succeeds,
+    to extend the payer's membership — without re-posting a ledger entry, since
+    ``process_webhook`` already recorded one generically before calling this.
+    """
+    try:
+        membership = Membership.objects.select_related("tier").get(id=membership_id)
+    except (Membership.DoesNotExist, ValueError, ValidationError):
+        return
+    if membership.tier is None:
+        return
+    _extend_expiry(membership, membership.tier)

@@ -389,3 +389,31 @@ def test_check_in_requires_exactly_one_identifier():
         format="json",
     )
     assert both.status_code == 400
+
+
+@pytest.mark.django_db
+def test_my_registrations_returns_only_own_registrations_with_event_details():
+    creator = User.objects.create_user(username="creator-my-regs", password="pass123")
+    now = timezone.now()
+    event = Event.objects.create(
+        title="Gala Night",
+        starts_at=now + timedelta(days=3),
+        ends_at=now + timedelta(days=3, hours=2),
+        is_published=True,
+        created_by=creator,
+    )
+
+    member = User.objects.create_user(username="my-regs-member", password="pass123")
+    other = User.objects.create_user(username="my-regs-other", password="pass123")
+    EventRegistration.objects.create(event=event, user=member, status=REG_STATUS_REGISTERED)
+    EventRegistration.objects.create(event=event, user=other, status=REG_STATUS_REGISTERED)
+
+    client = APIClient()
+    client.force_authenticate(user=member)
+    response = client.get(reverse("events-registrations-me"))
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["event"]["title"] == "Gala Night"
+    assert body[0]["user_id"] == str(member.id)
