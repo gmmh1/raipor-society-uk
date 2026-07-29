@@ -41,3 +41,7 @@ Thumbs.db
 # Docker
 data/postgres/
 data/minio/
+
+# Local Claude Code tooling (machine-specific paths, generated caches)
+.claude/
+graphify-out/
