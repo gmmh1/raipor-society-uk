@@ -24,6 +24,20 @@ const ALLOWED = [
   /^\/identity\/roles\/revoke\/$/,
   /^\/documents\/[0-9a-f-]{36}\/versions\/[0-9a-f-]{36}\/download\/$/,
   /^\/chat\/messages\/[0-9a-f-]{36}\/flag\/$/,
+  /^\/chat\/channels\/direct\/$/,
+  /^\/chat\/channels\/group\/$/,
+  /^\/chat\/channels\/[0-9a-f-]{36}\/members\/$/,
+  /^\/chat\/channels\/[0-9a-f-]{36}\/messages\/$/,
+  /^\/shop\/orders\/$/,
+  /^\/shop\/orders\/[0-9a-f-]{36}\/checkout\/$/,
+  /^\/shop\/orders\/transitions\/$/,
+  /^\/shop\/products\/$/,
+  /^\/shop\/products\/[0-9a-f-]{36}\/deactivate\/$/,
+  /^\/documents\/$/,
+  /^\/documents\/[0-9a-f-]{36}\/archive\/$/,
+  /^\/membership\/guardians\/link\/$/,
+  /^\/membership\/guardians\/consent\/$/,
+  /^\/finance\/receipts\/[0-9a-f-]{36}\/download\/$/,
 ];
 
 type ProxyBody = {

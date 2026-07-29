@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 import { PortalTabs } from "@/components/PortalTabs";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import type { Lang } from "@/lib/i18n/config";
 
 type CurrentUser = {
   username: string;
@@ -13,11 +15,13 @@ export function PortalShell({
   portalLabel,
   tabs,
   user,
+  lang,
   children,
 }: {
   portalLabel: string;
   tabs: { href: string; label: string }[];
   user: CurrentUser | null;
+  lang: Lang;
   children: React.ReactNode;
 }) {
   const displayName =
@@ -37,6 +41,7 @@ export function PortalShell({
             </span>
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <LanguageSwitcher lang={lang} dark />
             <span style={{ fontSize: "0.9rem", opacity: 0.85 }}>{displayName}</span>
             <LogoutButton />
           </div>

@@ -2,17 +2,22 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/programs", label: "Programs" },
-  { href: "/events", label: "Events" },
-  { href: "/contact", label: "Contact" },
-];
-
-export function TopNav() {
+export function TopNav({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState(false);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
+  const links = [
+    { href: "/", label: t("nav.home") },
+    { href: "/about", label: t("nav.about") },
+    { href: "/programs", label: t("nav.programs") },
+    { href: "/events", label: t("nav.events") },
+    { href: "/shop", label: t("nav.shop") },
+    { href: "/contact", label: t("nav.contact") },
+  ];
 
   return (
     <div className="nav-wrap">
@@ -34,11 +39,12 @@ export function TopNav() {
           </div>
 
           <div className="nav-cta">
-            <Link href="/member/dashboard" className="btn btn-ghost nav-member-link">
-              Member sign in
+            <LanguageSwitcher lang={lang} />
+            <Link href="/login" className="btn btn-ghost nav-member-link">
+              {t("nav.signIn")}
             </Link>
-            <Link href="/donate" className="btn btn-primary">
-              Donate
+            <Link href="/register" className="btn btn-primary">
+              {t("nav.join")}
             </Link>
             <button
               type="button"
@@ -58,8 +64,14 @@ export function TopNav() {
               {link.label}
             </Link>
           ))}
-          <Link href="/member/dashboard" onClick={() => setOpen(false)}>
-            Member sign in
+          <Link href="/donate" onClick={() => setOpen(false)}>
+            {t("nav.donate")}
+          </Link>
+          <Link href="/login" onClick={() => setOpen(false)}>
+            {t("nav.signIn")}
+          </Link>
+          <Link href="/register" onClick={() => setOpen(false)}>
+            {t("nav.join")}
           </Link>
         </div>
       </div>

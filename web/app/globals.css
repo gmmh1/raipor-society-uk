@@ -19,6 +19,11 @@
   --radius-sm: 10px;
 }
 
+html:lang(bn) {
+  --font-display: var(--font-bengali-display), "Noto Serif Bengali", Georgia, serif;
+  --font-body: var(--font-bengali-body), "Noto Sans Bengali", -apple-system, sans-serif;
+}
+
 * {
   box-sizing: border-box;
 }

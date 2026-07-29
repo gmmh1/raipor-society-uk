@@ -1,33 +1,20 @@
-const values = [
-  {
-    title: "Open to everyone",
-    copy: "Every event, program, and welfare service is open to the whole community, regardless of age or background.",
-  },
-  {
-    title: "Run by members",
-    copy: "Decisions are made through open governance and member voting — this is a community organisation run for its members, by its members.",
-  },
-  {
-    title: "Built to last",
-    copy: "We invest in people, not just events — mentorship, safeguarding, and steady, patient community-building.",
-  },
-];
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
-export default function AboutPage() {
+const values = ["open", "member", "lasting"] as const;
+
+export default async function AboutPage() {
+  const lang = await getLang();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
   return (
     <main>
       <section className="section" style={{ paddingBottom: 0 }}>
         <div className="container">
-          <span className="eyebrow">About us</span>
-          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>
-            A community, established for the long run.
-          </h1>
+          <span className="eyebrow">{t("about.eyebrow")}</span>
+          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>{t("about.title")}</h1>
           <p className="lede" style={{ marginTop: 18 }}>
-            Raipor Society UK is a community organisation bringing people
-            together through events, learning, and collaboration —
-            celebrating our diversity while building strong bonds and
-            encouraging personal growth and collective development for a
-            better future. Always forward, together.
+            {t("about.lede")}
           </p>
         </div>
       </section>
@@ -35,14 +22,16 @@ export default function AboutPage() {
       <section className="section">
         <div className="container">
           <div className="section-head">
-            <span className="eyebrow">How we work</span>
-            <h2>What guides the society day to day.</h2>
+            <span className="eyebrow">{t("about.workEyebrow")}</span>
+            <h2>{t("about.workTitle")}</h2>
           </div>
           <div className="grid grid-2">
-            {values.map((value) => (
-              <article className="card" key={value.title}>
-                <h3>{value.title}</h3>
-                <p style={{ marginTop: 8 }}>{value.copy}</p>
+            {values.map((key) => (
+              <article className="card" key={key}>
+                <h3>{t(`about.value.${key}.title` as Parameters<typeof translate>[1])}</h3>
+                <p style={{ marginTop: 8 }}>
+                  {t(`about.value.${key}.copy` as Parameters<typeof translate>[1])}
+                </p>
               </article>
             ))}
           </div>
@@ -52,14 +41,9 @@ export default function AboutPage() {
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
           <div className="card" style={{ padding: 40 }}>
-            <span className="eyebrow">Governance</span>
-            <h2 style={{ marginTop: 14 }}>Member-led, transparently run.</h2>
-            <p style={{ marginTop: 12, maxWidth: "60ch" }}>
-              Membership status, committee roles, and community votes are all
-              handled through the society's own member portal, with an
-              auditable record behind every decision — because trust is
-              something we build in the open, not something we ask for.
-            </p>
+            <span className="eyebrow">{t("about.governanceEyebrow")}</span>
+            <h2 style={{ marginTop: 14 }}>{t("about.governanceTitle")}</h2>
+            <p style={{ marginTop: 12, maxWidth: "60ch" }}>{t("about.governanceBody")}</p>
           </div>
         </div>
       </section>

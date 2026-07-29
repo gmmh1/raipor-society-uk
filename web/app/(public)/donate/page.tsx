@@ -1,46 +1,50 @@
-const uses = [
-  { title: "Community events", copy: "Venue, food, and logistics for gatherings open to the whole community." },
-  { title: "Youth programs", copy: "Mentorship, classes, and activities for the society's younger members." },
-  { title: "Welfare support", copy: "Practical help for members and families who need it most." },
-];
+import { DonateForm } from "@/components/DonateForm";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
-export default function DonatePage() {
+const uses = ["events", "youth", "welfare"] as const;
+
+export default async function DonatePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ thanks?: string }>;
+}) {
+  const [params, lang] = await Promise.all([searchParams, getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
   return (
     <main>
       <section className="section" style={{ paddingBottom: 0 }}>
         <div className="container">
-          <span className="eyebrow">Donate</span>
-          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>
-            Give what you can — it goes straight back into the community.
-          </h1>
+          <span className="eyebrow">{t("donate.eyebrow")}</span>
+          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>{t("donate.title")}</h1>
           <p className="lede" style={{ marginTop: 18 }}>
-            Every donation supports our events, youth programs, and welfare
-            work. We're finalising online giving now — in the meantime, get
-            in touch and we'll arrange it directly.
+            {t("donate.lede")}
           </p>
         </div>
       </section>
 
       <section className="section">
         <div className="container">
+          {params.thanks && (
+            <p className="form-success" style={{ marginBottom: 20 }}>
+              {t("donate.thanks")}
+            </p>
+          )}
           <div className="grid grid-2" style={{ alignItems: "start" }}>
             <div className="card" style={{ padding: 40 }}>
-              <span className="tag">Online giving</span>
-              <h2 style={{ marginTop: 14 }}>Card & bank giving — coming soon</h2>
-              <p style={{ marginTop: 10 }}>
-                We're finishing setup on secure online donations. Want to
-                give before then? Contact us and we'll take it from there.
-              </p>
-              <a href="/contact" className="btn btn-primary" style={{ marginTop: 22 }}>
-                Contact us to give
-              </a>
+              <span className="tag">{t("donate.giveOnline")}</span>
+              <h2 style={{ marginTop: 14 }}>{t("donate.makeADonation")}</h2>
+              <DonateForm />
             </div>
 
             <div className="grid" style={{ gap: 16 }}>
-              {uses.map((use) => (
-                <article className="card" key={use.title}>
-                  <h3>{use.title}</h3>
-                  <p style={{ marginTop: 8 }}>{use.copy}</p>
+              {uses.map((key) => (
+                <article className="card" key={key}>
+                  <h3>{t(`donate.use.${key}.title` as Parameters<typeof translate>[1])}</h3>
+                  <p style={{ marginTop: 8 }}>
+                    {t(`donate.use.${key}.copy` as Parameters<typeof translate>[1])}
+                  </p>
                 </article>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { apiGet } from "@/lib/api";
 import { MembershipTransitionForm } from "@/components/admin/MembershipTransitionForm";
+import { LinkGuardianForm } from "@/components/admin/LinkGuardianForm";
 
 type MembershipRow = {
   id: string;
@@ -31,6 +32,10 @@ export default async function AdminMembershipPage({
     <div>
       <span className="eyebrow">Membership</span>
       <h1 style={{ marginTop: 10 }}>Membership administration</h1>
+
+      <div style={{ marginTop: 24 }}>
+        <LinkGuardianForm />
+      </div>
 
       <form method="GET" className="card" style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" }}>
         <input

@@ -1,15 +1,18 @@
-export default function ContactPage() {
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
+
+export default async function ContactPage() {
+  const lang = await getLang();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
   return (
     <main>
       <section className="section" style={{ paddingBottom: 0 }}>
         <div className="container">
-          <span className="eyebrow">Contact</span>
-          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>
-            We'd love to hear from you.
-          </h1>
+          <span className="eyebrow">{t("contact.eyebrow")}</span>
+          <h1 style={{ marginTop: 16, maxWidth: "16ch" }}>{t("contact.title")}</h1>
           <p className="lede" style={{ marginTop: 18 }}>
-            Questions about membership, events, or how to get involved —
-            reach out and a member of the committee will get back to you.
+            {t("contact.lede")}
           </p>
         </div>
       </section>
@@ -18,10 +21,8 @@ export default function ContactPage() {
         <div className="container">
           <div className="grid grid-2">
             <div className="card" style={{ padding: 40 }}>
-              <h2>Email us</h2>
-              <p style={{ marginTop: 10 }}>
-                The quickest way to reach the committee directly.
-              </p>
+              <h2>{t("contact.emailTitle")}</h2>
+              <p style={{ marginTop: 10 }}>{t("contact.emailBody")}</p>
               <a
                 href="mailto:hello@raipursociety.uk"
                 className="btn btn-primary"
@@ -32,17 +33,14 @@ export default function ContactPage() {
             </div>
 
             <div className="card" style={{ padding: 40 }}>
-              <h2>Already a member?</h2>
-              <p style={{ marginTop: 10 }}>
-                Sign in to the member portal for events, documents, and
-                voting.
-              </p>
+              <h2>{t("contact.memberTitle")}</h2>
+              <p style={{ marginTop: 10 }}>{t("contact.memberBody")}</p>
               <a
                 href="/member/dashboard"
                 className="btn btn-ghost"
                 style={{ marginTop: 22 }}
               >
-                Member sign in
+                {t("contact.memberSignIn")}
               </a>
             </div>
           </div>

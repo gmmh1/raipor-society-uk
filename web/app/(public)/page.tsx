@@ -1,68 +1,29 @@
 import Link from "next/link";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
-const pillars = [
-  {
-    title: "Unity",
-    copy: "One community across generations and backgrounds, gathered around shared roots and a shared future.",
-  },
-  {
-    title: "Culture",
-    copy: "Festivals, food, language, and tradition, kept alive and passed on through everyday community life.",
-  },
-  {
-    title: "Friendship",
-    copy: "A place to belong — new arrivals, long-time members, young people, and elders, all welcome at the table.",
-  },
-  {
-    title: "Progress",
-    copy: "Learning, mentorship, and mutual support that help every member and the community grow together.",
-  },
-];
+const pillars = ["unity", "culture", "friendship", "progress"] as const;
+const programs = ["culture", "youth", "welfare", "gatherings"] as const;
 
-const programs = [
-  {
-    tag: "Culture",
-    title: "Festivals & celebrations",
-    copy: "Seasonal gatherings and cultural festivals that bring the community together to celebrate shared heritage.",
-  },
-  {
-    tag: "Youth",
-    title: "Youth & education",
-    copy: "Mentorship, language classes, and activities that help younger members build confidence and connection.",
-  },
-  {
-    tag: "Welfare",
-    title: "Community welfare",
-    copy: "Practical support for members and families navigating new challenges, from newcomers to elders.",
-  },
-  {
-    tag: "Gatherings",
-    title: "Regular meet-ups",
-    copy: "Ongoing social and interest gatherings that keep the community connected between big events.",
-  },
-];
+export default async function HomePage() {
+  const lang = await getLang();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
-export default function HomePage() {
   return (
     <main>
       <section className="hero">
         <div className="container hero-inner">
-          <span className="eyebrow">Registered community organisation · United Kingdom</span>
+          <span className="eyebrow">{t("home.eyebrow")}</span>
           <h1>
-            Unity, culture, and <em>progress</em> — together.
+            {t("home.heroTitlePre")} <em>{t("home.heroTitleEm")}</em> {t("home.heroTitlePost")}
           </h1>
-          <p>
-            Raipor Society UK brings people together through events, learning,
-            and collaboration — celebrating our diversity while building
-            strong bonds, encouraging personal growth, and working toward a
-            better future for the whole community.
-          </p>
+          <p>{t("home.heroBody")}</p>
           <div className="hero-actions">
-            <Link href="/contact" className="btn btn-primary">
-              Join the community
+            <Link href="/register" className="btn btn-primary">
+              {t("home.joinCta")}
             </Link>
             <Link href="/programs" className="btn btn-ghost-dark">
-              See our programs
+              {t("home.programsCta")}
             </Link>
           </div>
         </div>
@@ -73,17 +34,17 @@ export default function HomePage() {
       <section className="section">
         <div className="container">
           <div className="section-head">
-            <span className="eyebrow">What we stand for</span>
-            <h2>Four ideas hold everything we do together.</h2>
+            <span className="eyebrow">{t("home.pillarsEyebrow")}</span>
+            <h2>{t("home.pillarsTitle")}</h2>
           </div>
           <div className="grid grid-4">
-            {pillars.map((pillar) => (
-              <article className="pillar" key={pillar.title}>
+            {pillars.map((key) => (
+              <article className="pillar" key={key}>
                 <span className="pillar-index" aria-hidden="true">
-                  {pillar.title.slice(0, 1)}
+                  {t(`home.pillar.${key}.title` as Parameters<typeof translate>[1]).slice(0, 1)}
                 </span>
-                <h3>{pillar.title}</h3>
-                <p>{pillar.copy}</p>
+                <h3>{t(`home.pillar.${key}.title` as Parameters<typeof translate>[1])}</h3>
+                <p>{t(`home.pillar.${key}.copy` as Parameters<typeof translate>[1])}</p>
               </article>
             ))}
           </div>
@@ -93,15 +54,19 @@ export default function HomePage() {
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
           <div className="section-head">
-            <span className="eyebrow">Get involved</span>
-            <h2>Programs built around the community's real needs.</h2>
+            <span className="eyebrow">{t("home.programsEyebrow")}</span>
+            <h2>{t("home.programsTitle")}</h2>
           </div>
           <div className="grid grid-2">
-            {programs.map((program) => (
-              <article className="card" key={program.title}>
-                <span className="tag">{program.tag}</span>
-                <h3 style={{ marginTop: 14 }}>{program.title}</h3>
-                <p style={{ marginTop: 8 }}>{program.copy}</p>
+            {programs.map((key) => (
+              <article className="card" key={key}>
+                <span className="tag">{t(`home.program.${key}.tag` as Parameters<typeof translate>[1])}</span>
+                <h3 style={{ marginTop: 14 }}>
+                  {t(`home.program.${key}.title` as Parameters<typeof translate>[1])}
+                </h3>
+                <p style={{ marginTop: 8 }}>
+                  {t(`home.program.${key}.copy` as Parameters<typeof translate>[1])}
+                </p>
               </article>
             ))}
           </div>
@@ -124,20 +89,15 @@ export default function HomePage() {
             }}
           >
             <div style={{ maxWidth: 480 }}>
-              <h2 style={{ color: "var(--paper)" }}>
-                Every member makes this community stronger.
-              </h2>
-              <p style={{ color: "rgba(250,248,244,0.75)", marginTop: 10 }}>
-                Whether you're joining an event, becoming a member, or
-                supporting our work, there's a place for you here.
-              </p>
+              <h2 style={{ color: "var(--paper)" }}>{t("home.ctaTitle")}</h2>
+              <p style={{ color: "rgba(250,248,244,0.75)", marginTop: 10 }}>{t("home.ctaBody")}</p>
             </div>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               <Link href="/contact" className="btn btn-primary">
-                Get in touch
+                {t("home.ctaContact")}
               </Link>
               <Link href="/donate" className="btn btn-ghost-dark">
-                Ways to give
+                {t("home.ctaDonate")}
               </Link>
             </div>
           </div>
