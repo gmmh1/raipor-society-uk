@@ -15,6 +15,20 @@ SECRET_KEY = env("SECRET_KEY", default="change-me")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+# -------------------------------
+# Production security hardening (no-ops locally, since DEBUG defaults True there)
+# -------------------------------
+# Railway (and most PaaS) terminate TLS at the edge and forward plain HTTP
+# internally with this header set — without it, SECURE_SSL_REDIRECT can't tell
+# the request already arrived over HTTPS and redirects forever.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SECURE_SSL_REDIRECT = env.bool("SECURE_SSL_REDIRECT", default=not DEBUG)
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_HSTS_SECONDS = env.int("SECURE_HSTS_SECONDS", default=0 if DEBUG else 31536000)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+
 INSTALLED_APPS = [
     # "daphne" must come before "django.contrib.staticfiles" — Channels' own
     # requirement so ``manage.py runserver`` serves ASGI (and thus WebSockets) in
@@ -47,6 +61,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -87,6 +102,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "identity.User"
@@ -130,6 +150,7 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
