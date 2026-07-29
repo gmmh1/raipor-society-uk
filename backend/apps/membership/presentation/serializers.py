@@ -22,6 +22,31 @@ class MembershipSerializer(serializers.ModelSerializer):
         ]
 
 
+class MembershipAdminSerializer(serializers.ModelSerializer):
+    tier = serializers.CharField(source="tier.code", read_only=True, allow_null=True)
+    user_id = serializers.UUIDField(source="user.id", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.EmailField(source="user.email", read_only=True)
+    is_minor = serializers.BooleanField(source="user.is_minor", read_only=True)
+
+    class Meta:
+        model = Membership
+        fields = [
+            "id",
+            "user_id",
+            "username",
+            "email",
+            "is_minor",
+            "status",
+            "tier",
+            "started_at",
+            "ended_at",
+            "expires_at",
+            "created_at",
+            "updated_at",
+        ]
+
+
 class MembershipTransitionSerializer(serializers.Serializer):
     membership_id = serializers.UUIDField()
     to_status = serializers.ChoiceField(choices=[choice[0] for choice in STATUS_CHOICES])

@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.pagination import StandardResultsPagination
 from apps.identity.models import User
 from apps.identity.permissions import HasAnyRole
 from apps.membership.application.guardian_service import (
@@ -17,17 +18,21 @@ from apps.membership.application.lifecycle_service import (
     transition_membership_status,
 )
 from apps.membership.application.tier_service import TierError, assign_tier, record_dues_payment
+from apps.membership.domain.status import STATUS_CHOICES
 from apps.membership.models import GuardianRelationship, Membership, MembershipTier
 from apps.membership.presentation.serializers import (
     DuesRecordRequestSerializer,
     GuardianConsentRequestSerializer,
     GuardianLinkRequestSerializer,
     GuardianRelationshipSerializer,
+    MembershipAdminSerializer,
     MembershipSerializer,
     MembershipTierSerializer,
     MembershipTransitionSerializer,
     TierAssignmentRequestSerializer,
 )
+
+VALID_STATUSES = {choice[0] for choice in STATUS_CHOICES}
 
 
 class MyMembershipView(APIView):
@@ -36,6 +41,46 @@ class MyMembershipView(APIView):
     def get(self, request):
         membership = get_or_create_membership_for_user(request.user)
         return Response(MembershipSerializer(membership).data)
+
+
+class MembershipAdminListView(APIView):
+    """Admin/treasurer search over all memberships, paginated and filterable.
+
+    Closes ADR 0003's "admin list/search endpoints" follow-up.
+    """
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "treasurer")
+
+    def get(self, request):
+        queryset = Membership.objects.select_related("user", "tier").order_by("-created_at")
+
+        status_filter = request.query_params.get("status", "").strip()
+        if status_filter:
+            if status_filter not in VALID_STATUSES:
+                return Response(
+                    {"detail": f"Unknown status '{status_filter}'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            queryset = queryset.filter(status=status_filter)
+
+        tier_filter = request.query_params.get("tier", "").strip()
+        if tier_filter:
+            queryset = queryset.filter(tier__code=tier_filter)
+
+        query = request.query_params.get("q", "").strip()
+        if query:
+            queryset = queryset.filter(
+                Q(user__username__icontains=query)
+                | Q(user__email__icontains=query)
+                | Q(user__first_name__icontains=query)
+                | Q(user__last_name__icontains=query)
+            )
+
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(queryset, request)
+        serializer = MembershipAdminSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class MembershipTransitionView(APIView):

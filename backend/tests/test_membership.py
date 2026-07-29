@@ -105,3 +105,46 @@ def test_membership_transition_rejects_invalid_transition():
     )
 
     assert invalid_response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_membership_admin_list_requires_role():
+    member = User.objects.create_user(username="plain-member", password="pass123")
+    client = APIClient()
+    client.force_authenticate(user=member)
+
+    response = client.get(reverse("membership-admin-list"))
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_membership_admin_list_filters_by_status_and_search():
+    admin_user = User.objects.create_user(username="admin-lister", password="pass123")
+    admin_role = Role.objects.create(code="admin", name="Admin")
+    admin_user.roles.add(admin_role)
+
+    active_user = User.objects.create_user(
+        username="alice-active", email="alice@example.com", password="pass123"
+    )
+    Membership.objects.create(user=active_user, status=STATUS_ACTIVE)
+
+    pending_user = User.objects.create_user(username="bob-pending", password="pass123")
+    Membership.objects.create(user=pending_user, status=STATUS_PENDING)
+
+    client = APIClient()
+    client.force_authenticate(user=admin_user)
+
+    status_response = client.get(reverse("membership-admin-list"), {"status": STATUS_ACTIVE})
+    assert status_response.status_code == 200
+    status_results = status_response.json()["results"]
+    assert {item["username"] for item in status_results} == {"alice-active"}
+
+    search_response = client.get(reverse("membership-admin-list"), {"q": "alice"})
+    search_results = search_response.json()["results"]
+    assert {item["username"] for item in search_results} == {"alice-active"}
+
+    unknown_status_response = client.get(
+        reverse("membership-admin-list"), {"status": "not-a-real-status"}
+    )
+    assert unknown_status_response.status_code == 400
