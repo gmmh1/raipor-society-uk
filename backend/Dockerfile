@@ -23,11 +23,10 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /app
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-# daphne (ASGI), not gunicorn/runserver — Chat's WebSocket consumers need a real
-# ASGI server. Local dev overrides this via docker-compose.yml's `command:`.
-CMD python manage.py migrate --noinput && \
-    python manage.py collectstatic --noinput && \
-    daphne -b 0.0.0.0 -p 8000 config.asgi:application
+# Local dev overrides this via docker-compose.yml's `command:`. See entrypoint.sh
+# for how SERVICE_ROLE picks web/worker/beat from this one image.
+CMD ["/app/entrypoint.sh"]
