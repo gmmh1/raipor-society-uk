@@ -36,13 +36,11 @@ export function PortalShell({
               R
             </span>
             Raipor Society UK
-            <span style={{ opacity: 0.6, fontFamily: "var(--font-body)", fontSize: "0.85rem" }}>
-              · {portalLabel}
-            </span>
+            <span className="portal-label">· {portalLabel}</span>
           </Link>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div className="portal-user-group">
             <LanguageSwitcher lang={lang} dark />
-            <span style={{ fontSize: "0.9rem", opacity: 0.85 }}>{displayName}</span>
+            <span className="portal-user-name">{displayName}</span>
             <LogoutButton />
           </div>
         </div>

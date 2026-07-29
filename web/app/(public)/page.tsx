@@ -75,24 +75,12 @@ export default async function HomePage() {
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
-          <div
-            className="card"
-            style={{
-              background: "var(--ink)",
-              border: "none",
-              padding: "48px",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 24,
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div style={{ maxWidth: 480 }}>
+          <div className="cta-banner">
+            <div style={{ maxWidth: 480, position: "relative" }}>
               <h2 style={{ color: "var(--paper)" }}>{t("home.ctaTitle")}</h2>
               <p style={{ color: "rgba(250,248,244,0.75)", marginTop: 10 }}>{t("home.ctaBody")}</p>
             </div>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap", position: "relative" }}>
               <Link href="/contact" className="btn btn-primary">
                 {t("home.ctaContact")}
               </Link>

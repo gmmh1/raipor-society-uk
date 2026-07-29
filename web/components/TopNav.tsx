@@ -39,13 +39,15 @@ export function TopNav({ lang }: { lang: Lang }) {
           </div>
 
           <div className="nav-cta">
-            <LanguageSwitcher lang={lang} />
-            <Link href="/login" className="btn btn-ghost nav-member-link">
-              {t("nav.signIn")}
-            </Link>
-            <Link href="/register" className="btn btn-primary">
-              {t("nav.join")}
-            </Link>
+            <div className="nav-auth">
+              <LanguageSwitcher lang={lang} />
+              <Link href="/login" className="btn btn-ghost">
+                {t("nav.signIn")}
+              </Link>
+              <Link href="/register" className="btn btn-primary">
+                {t("nav.join")}
+              </Link>
+            </div>
             <button
               type="button"
               className="nav-toggle"
@@ -73,6 +75,9 @@ export function TopNav({ lang }: { lang: Lang }) {
           <Link href="/register" onClick={() => setOpen(false)}>
             {t("nav.join")}
           </Link>
+          <div className="mobile-panel-lang">
+            <LanguageSwitcher lang={lang} />
+          </div>
         </div>
       </div>
     </div>

@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
       {overview.finance.reconciliation_variance_flagged && (
         <div
           className="card"
-          style={{ marginTop: 20, borderColor: "var(--rose)", background: "rgba(168,58,95,0.06)" }}
+          style={{ marginTop: 20, borderColor: "var(--rose)", background: "rgba(255,68,51,0.07)" }}
         >
           <strong style={{ color: "var(--rose)" }}>Reconciliation variance flagged</strong>
           <p style={{ marginTop: 6 }}>
