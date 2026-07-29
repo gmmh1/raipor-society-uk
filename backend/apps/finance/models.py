@@ -63,6 +63,47 @@ class PaymentTransaction(UUIDModel, TimeStampedModel):
         ]
 
 
+class Receipt(UUIDModel, TimeStampedModel):
+    """A PDF receipt for a completed ledger credit (donation, dues, shop sale).
+
+    ``receipt_number`` is derived from the row's own id rather than a sequential
+    counter — see ADR 0014. Not suitable as a VAT invoice number if the charity
+    ever becomes VAT-registered.
+    """
+
+    ledger_entry = models.OneToOneField(
+        LedgerEntry, on_delete=models.PROTECT, related_name="receipt"
+    )
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="receipts",
+    )
+    receipt_number = models.CharField(max_length=32, unique=True)
+    amount_minor = models.BigIntegerField()
+    currency = models.CharField(max_length=8, default="GBP")
+    description = models.CharField(max_length=255, blank=True)
+    pdf_file_key = models.CharField(max_length=512)
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="receipts_issued",
+    )
+
+    class Meta:
+        db_table = "finance_receipt"
+        indexes = [
+            models.Index(fields=["recipient", "created_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.receipt_number
+
+
 class PaymentWebhookEvent(UUIDModel):
     provider = models.CharField(max_length=32, choices=PROVIDER_CHOICES)
     event_id = models.CharField(max_length=128)

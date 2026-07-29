@@ -8,7 +8,10 @@ from django.test import override_settings
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from apps.finance.models import LedgerEntry, PaymentTransaction, PaymentWebhookEvent
+from apps.finance.application.payment_service import CheckoutError, create_checkout_session
+from apps.finance.application.receipt_service import ReceiptError, issue_receipt
+from apps.finance.models import LedgerEntry, PaymentTransaction, PaymentWebhookEvent, Receipt
+from apps.finance.tasks import check_reconciliation_variance_task
 from apps.identity.models import Role, User
 
 STRIPE_TEST_SECRET = "whsec_test_secret"
@@ -260,3 +263,242 @@ def test_reconciliation_summary_requires_role_and_returns_data():
     assert allowed.json()["currency"] == "GBP"
     assert isinstance(allowed.json()["ledger_totals"], list)
     assert isinstance(allowed.json()["payment_totals"], list)
+
+
+@pytest.mark.django_db
+def test_reconciliation_summary_flags_variance_when_ledger_and_payments_disagree():
+    LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=3000, currency="GBP"
+    )
+    PaymentTransaction.objects.create(
+        provider="stripe", external_id="cs_variance", status="succeeded", amount_minor=1000,
+        currency="GBP",
+    )
+
+    role = Role.objects.create(code="treasurer", name="Treasurer")
+    user = User.objects.create_user(username="finance-user-variance", password="pass123")
+    user.roles.add(role)
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.get(reverse("finance-reconciliation-summary"))
+    data = response.json()
+
+    assert data["payment_derived_ledger_credit_minor"] == 3000
+    assert data["succeeded_payment_transactions_minor"] == 1000
+    assert data["variance_minor"] == 2000
+    assert data["variance_flagged"] is True
+
+
+@pytest.mark.django_db
+def test_create_checkout_session_stripe_records_pending_transaction(monkeypatch):
+    monkeypatch.setattr(
+        "apps.finance.application.payment_service.create_stripe_checkout_session",
+        lambda **kwargs: {"external_id": "cs_new_1", "redirect_url": "https://stripe.example/pay"},
+    )
+
+    payer = User.objects.create_user(username="checkout-user-1", password="pass123")
+    result = create_checkout_session(
+        provider="stripe",
+        amount_minor=5000,
+        currency="GBP",
+        entry_type="membership_fee",
+        description="Annual dues",
+        reference="DUES-1",
+        payer=payer,
+        success_url="https://example.com/success",
+        cancel_url="https://example.com/cancel",
+    )
+
+    assert result["redirect_url"] == "https://stripe.example/pay"
+    tx = PaymentTransaction.objects.get(external_id="cs_new_1")
+    assert tx.status == "pending"
+    assert tx.payer == payer
+    assert tx.payload["entry_type"] == "membership_fee"
+
+
+@pytest.mark.django_db
+def test_create_checkout_session_rejects_manual_provider():
+    payer = User.objects.create_user(username="checkout-user-2", password="pass123")
+    with pytest.raises(CheckoutError):
+        create_checkout_session(
+            provider="manual",
+            amount_minor=1000,
+            currency="GBP",
+            entry_type="donation",
+            description="",
+            reference="",
+            payer=payer,
+            success_url="https://example.com/success",
+            cancel_url="https://example.com/cancel",
+        )
+
+
+@pytest.mark.django_db
+def test_checkout_endpoint_requires_authentication():
+    client = APIClient()
+    response = client.post(
+        reverse("finance-payments-checkout"),
+        data={
+            "provider": "stripe",
+            "entry_type": "donation",
+            "amount_minor": 1000,
+            "success_url": "https://example.com/s",
+            "cancel_url": "https://example.com/c",
+        },
+        format="json",
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(STRIPE_WEBHOOK_SECRET=STRIPE_TEST_SECRET)
+def test_webhook_uses_entry_type_recorded_at_checkout():
+    payer = User.objects.create_user(username="checkout-user-3", password="pass123")
+    PaymentTransaction.objects.create(
+        provider="stripe",
+        external_id="cs_test_1",
+        status="pending",
+        amount_minor=5000,
+        currency="GBP",
+        payer=payer,
+        payload={"entry_type": "membership_fee", "description": "Dues", "reference": "DUES-2"},
+    )
+
+    client = APIClient()
+    body = _stripe_event_body("evt_membership_1")
+    header = _stripe_signature_header(body, STRIPE_TEST_SECRET)
+
+    response = client.post(
+        reverse("finance-webhook-stripe"),
+        data=body,
+        content_type="application/json",
+        HTTP_STRIPE_SIGNATURE=header,
+    )
+
+    assert response.status_code == 200
+    entry = LedgerEntry.objects.get(reference="cs_test_1")
+    assert entry.entry_type == "membership_fee"
+
+
+@pytest.mark.django_db
+def test_issue_receipt_generates_pdf_and_uploads_to_storage(monkeypatch):
+    captured = {}
+    monkeypatch.setattr(
+        "apps.finance.application.receipt_service.render_receipt_pdf",
+        lambda context: b"%PDF-1.4 fake",
+    )
+    monkeypatch.setattr(
+        "apps.finance.application.receipt_service.storage.upload_bytes",
+        lambda **kwargs: captured.update(kwargs),
+    )
+
+    recipient = User.objects.create_user(username="receipt-user-1", password="pass123")
+    admin = User.objects.create_user(username="receipt-admin-1", password="pass123")
+    ledger_entry = LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=4500, currency="GBP",
+        description="Generous donation",
+    )
+
+    receipt = issue_receipt(ledger_entry=ledger_entry, recipient=recipient, actor=admin)
+
+    assert receipt.receipt_number.startswith("RCT-")
+    assert receipt.pdf_file_key == captured["key"]
+    assert captured["content_type"] == "application/pdf"
+    assert Receipt.objects.filter(ledger_entry=ledger_entry).count() == 1
+
+
+@pytest.mark.django_db
+def test_issue_receipt_rejects_duplicate_for_same_ledger_entry(monkeypatch):
+    monkeypatch.setattr(
+        "apps.finance.application.receipt_service.render_receipt_pdf", lambda context: b"pdf"
+    )
+    monkeypatch.setattr(
+        "apps.finance.application.receipt_service.storage.upload_bytes", lambda **kwargs: None
+    )
+
+    admin = User.objects.create_user(username="receipt-admin-2", password="pass123")
+    ledger_entry = LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=1000, currency="GBP"
+    )
+    issue_receipt(ledger_entry=ledger_entry, recipient=None, actor=admin)
+
+    with pytest.raises(ReceiptError):
+        issue_receipt(ledger_entry=ledger_entry, recipient=None, actor=admin)
+
+
+@pytest.mark.django_db
+def test_receipt_download_requires_owner_or_role(monkeypatch):
+    monkeypatch.setattr(
+        "apps.finance.application.receipt_service.storage.generate_presigned_download_url",
+        lambda **kwargs: "https://minio.example/receipts/RCT-1.pdf",
+    )
+
+    owner = User.objects.create_user(username="receipt-owner-1", password="pass123")
+    stranger = User.objects.create_user(username="receipt-stranger-1", password="pass123")
+    ledger_entry = LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=1000, currency="GBP"
+    )
+    receipt = Receipt.objects.create(
+        ledger_entry=ledger_entry,
+        recipient=owner,
+        receipt_number="RCT-TEST-1",
+        amount_minor=1000,
+        currency="GBP",
+        pdf_file_key="receipts/RCT-TEST-1.pdf",
+    )
+
+    stranger_client = APIClient()
+    stranger_client.force_authenticate(user=stranger)
+    forbidden = stranger_client.get(
+        reverse("finance-receipts-download", kwargs={"receipt_id": receipt.id})
+    )
+    assert forbidden.status_code == 403
+
+    owner_client = APIClient()
+    owner_client.force_authenticate(user=owner)
+    allowed = owner_client.get(
+        reverse("finance-receipts-download", kwargs={"receipt_id": receipt.id})
+    )
+    assert allowed.status_code == 200
+    assert allowed.json()["url"] == "https://minio.example/receipts/RCT-1.pdf"
+
+
+@pytest.mark.django_db
+def test_check_reconciliation_variance_task_notifies_admins_when_flagged(monkeypatch):
+    monkeypatch.setattr(
+        "apps.notifications.application.notification_orchestrator.dispatch_notification_task.delay",
+        lambda _notification_id: None,
+    )
+
+    LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=3000, currency="GBP"
+    )
+    role = Role.objects.create(code="treasurer", name="Treasurer")
+    treasurer = User.objects.create_user(username="variance-treasurer-1", password="pass123")
+    treasurer.roles.add(role)
+
+    notified = check_reconciliation_variance_task()
+
+    assert notified == 1
+    from apps.notifications.models import Notification
+
+    assert Notification.objects.filter(recipient=treasurer, channel="email").exists()
+
+
+@pytest.mark.django_db
+def test_check_reconciliation_variance_task_silent_when_balanced():
+    PaymentTransaction.objects.create(
+        provider="stripe", external_id="cs_balanced_1", status="succeeded", amount_minor=2000,
+        currency="GBP",
+    )
+    LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=2000, currency="GBP"
+    )
+    role = Role.objects.create(code="admin", name="Admin")
+    admin = User.objects.create_user(username="variance-admin-1", password="pass123")
+    admin.roles.add(role)
+
+    notified = check_reconciliation_variance_task()
+
+    assert notified == 0

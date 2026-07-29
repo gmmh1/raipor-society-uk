@@ -6,15 +6,34 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.finance.application.ledger_service import record_ledger_entry
-from apps.finance.application.payment_service import process_webhook, reconciliation_summary
+from apps.finance.application.payment_service import (
+    CheckoutError,
+    create_checkout_session,
+    process_webhook,
+    reconciliation_summary,
+)
+from apps.finance.application.receipt_service import (
+    ReceiptError,
+    get_receipt_download_url,
+    issue_receipt,
+)
 from apps.finance.domain.types import PROVIDER_PAYPAL, PROVIDER_STRIPE
 from apps.finance.infrastructure.payment_adapters import (
     WebhookVerificationError,
     verify_paypal_signature,
     verify_stripe_signature,
 )
-from apps.finance.models import LedgerEntry
-from apps.finance.presentation.serializers import LedgerEntryCreateSerializer, LedgerEntrySerializer
+from apps.finance.models import LedgerEntry, Receipt
+from apps.finance.presentation.serializers import (
+    CheckoutSessionSerializer,
+    CreateCheckoutSessionRequestSerializer,
+    IssueReceiptRequestSerializer,
+    LedgerEntryCreateSerializer,
+    LedgerEntrySerializer,
+    ReceiptSerializer,
+)
+from apps.identity.application.rbac_service import user_has_any_role
+from apps.identity.models import User
 from apps.identity.permissions import HasAnyRole
 
 
@@ -141,3 +160,86 @@ class LedgerEntryListView(APIView):
         if currency:
             qs = qs.filter(currency=currency.upper())
         return Response(LedgerEntrySerializer(qs, many=True).data)
+
+
+class CreateCheckoutSessionView(APIView):
+    """Initiates an outbound Stripe/PayPal payment (donation, dues, or shop sale).
+
+    Open to any authenticated user (donations aren't role-gated); anonymous
+    checkout is deliberately not supported so every payment has a known payer.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = CreateCheckoutSessionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            result = create_checkout_session(
+                provider=serializer.validated_data["provider"],
+                amount_minor=serializer.validated_data["amount_minor"],
+                currency=serializer.validated_data.get("currency", "GBP"),
+                entry_type=serializer.validated_data["entry_type"],
+                description=serializer.validated_data.get("description", ""),
+                reference=serializer.validated_data.get("reference", ""),
+                payer=request.user,
+                success_url=serializer.validated_data["success_url"],
+                cancel_url=serializer.validated_data["cancel_url"],
+            )
+        except CheckoutError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CheckoutSessionSerializer(result).data, status=status.HTTP_201_CREATED)
+
+
+class IssueReceiptView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "treasurer")
+
+    def post(self, request):
+        serializer = IssueReceiptRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        ledger_entry_id = serializer.validated_data["ledger_entry_id"]
+        try:
+            ledger_entry = LedgerEntry.objects.get(id=ledger_entry_id)
+        except LedgerEntry.DoesNotExist:
+            return Response(
+                {"detail": "Ledger entry not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        recipient = None
+        recipient_id = serializer.validated_data.get("recipient_id")
+        if recipient_id:
+            try:
+                recipient = User.objects.get(id=recipient_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": "Recipient not found."}, status=status.HTTP_404_NOT_FOUND
+                )
+
+        try:
+            receipt = issue_receipt(
+                ledger_entry=ledger_entry, recipient=recipient, actor=request.user
+            )
+        except ReceiptError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(ReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
+
+
+class ReceiptDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, receipt_id):
+        try:
+            receipt = Receipt.objects.get(id=receipt_id)
+        except Receipt.DoesNotExist:
+            return Response({"detail": "Receipt not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        is_owner = receipt.recipient_id == request.user.id
+        if not is_owner and not user_has_any_role(request.user, ("admin", "treasurer")):
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        return Response({"url": get_receipt_download_url(receipt=receipt)})

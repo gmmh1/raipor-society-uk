@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.finance.models import LedgerEntry, PaymentTransaction, PaymentWebhookEvent
+from apps.finance.models import LedgerEntry, PaymentTransaction, PaymentWebhookEvent, Receipt
 
 
 @admin.register(LedgerEntry)
@@ -22,3 +22,9 @@ class PaymentWebhookEventAdmin(admin.ModelAdmin):
     list_display = ("id", "provider", "event_id", "event_type", "received_at", "processed_at")
     list_filter = ("provider",)
     search_fields = ("event_id", "event_type")
+
+
+@admin.register(Receipt)
+class ReceiptAdmin(admin.ModelAdmin):
+    list_display = ("receipt_number", "recipient", "amount_minor", "currency", "created_at")
+    search_fields = ("receipt_number", "recipient__username", "recipient__email")

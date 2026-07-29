@@ -69,6 +69,58 @@ def verify_paypal_signature(*, headers: dict, payload_body: bytes, transmission_
     return response.json().get("verification_status") == "SUCCESS"
 
 
+def create_stripe_checkout_session(
+    *, amount_minor: int, currency: str, description: str, success_url: str, cancel_url: str
+) -> dict:
+    """Creates a Stripe Checkout Session server-side. Returns id + hosted-page url."""
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+    session = stripe.checkout.Session.create(
+        mode="payment",
+        line_items=[
+            {
+                "price_data": {
+                    "currency": currency.lower(),
+                    "product_data": {"name": description or "Payment to Raipor Society UK"},
+                    "unit_amount": amount_minor,
+                },
+                "quantity": 1,
+            }
+        ],
+        success_url=success_url,
+        cancel_url=cancel_url,
+    )
+    return {"external_id": session.id, "redirect_url": session.url}
+
+
+def create_paypal_order(
+    *, amount_minor: int, currency: str, description: str, success_url: str, cancel_url: str
+) -> dict:
+    """Creates a PayPal order via the v2 Checkout Orders API. Returns id + approval url."""
+    token = _get_paypal_access_token()
+    value = f"{amount_minor / 100:.2f}"
+    response = requests.post(
+        f"{settings.PAYPAL_API_BASE}/v2/checkout/orders",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "intent": "CAPTURE",
+            "purchase_units": [
+                {
+                    "amount": {"currency_code": currency.upper(), "value": value},
+                    "description": description or "Payment to Raipor Society UK",
+                }
+            ],
+            "application_context": {"return_url": success_url, "cancel_url": cancel_url},
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    order = response.json()
+    approve_link = next(
+        (link["href"] for link in order.get("links", []) if link.get("rel") == "approve"), ""
+    )
+    return {"external_id": order["id"], "redirect_url": approve_link}
+
+
 def _get_paypal_access_token() -> str:
     response = requests.post(
         f"{settings.PAYPAL_API_BASE}/v1/oauth2/token",
