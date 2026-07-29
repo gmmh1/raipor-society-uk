@@ -317,3 +317,26 @@ def test_cancel_stale_pending_orders_task_delegates_to_service():
     ShopOrder.objects.create(user=customer, status="pending", total_minor=100, currency="GBP")
 
     assert cancel_stale_pending_orders_task() == 0
+
+
+@pytest.mark.django_db
+def test_admin_order_list_requires_role_and_returns_all_orders():
+    customer_a = User.objects.create_user(username="shop-user-13", password="pass123")
+    customer_b = User.objects.create_user(username="shop-user-14", password="pass123")
+    ShopOrder.objects.create(user=customer_a, status="pending", total_minor=500, currency="GBP")
+    ShopOrder.objects.create(user=customer_b, status="paid", total_minor=750, currency="GBP")
+
+    client = APIClient()
+    client.force_authenticate(user=customer_a)
+    forbidden = client.get(reverse("shop-orders-admin-list"))
+    assert forbidden.status_code == 403
+
+    role = Role.objects.create(code="admin", name="Admin")
+    customer_a.roles.add(role)
+    allowed = client.get(reverse("shop-orders-admin-list"))
+    assert allowed.status_code == 200
+    assert allowed.json()["count"] == 2
+
+    filtered = client.get(reverse("shop-orders-admin-list"), {"status": "paid"})
+    assert filtered.json()["count"] == 1
+    assert filtered.json()["results"][0]["username"] == "shop-user-14"

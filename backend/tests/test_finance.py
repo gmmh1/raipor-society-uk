@@ -335,7 +335,29 @@ def test_create_checkout_session_rejects_manual_provider():
 
 
 @pytest.mark.django_db
-def test_checkout_endpoint_requires_authentication():
+def test_checkout_endpoint_requires_authentication_for_non_donation_entry_types():
+    client = APIClient()
+    response = client.post(
+        reverse("finance-payments-checkout"),
+        data={
+            "provider": "stripe",
+            "entry_type": "membership_fee",
+            "amount_minor": 1000,
+            "success_url": "https://example.com/s",
+            "cancel_url": "https://example.com/c",
+        },
+        format="json",
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_checkout_endpoint_allows_anonymous_donations(monkeypatch):
+    monkeypatch.setattr(
+        "apps.finance.application.payment_service.create_stripe_checkout_session",
+        lambda **kwargs: {"external_id": "cs_anon_1", "redirect_url": "https://stripe.example/checkout"},
+    )
+
     client = APIClient()
     response = client.post(
         reverse("finance-payments-checkout"),
@@ -348,7 +370,8 @@ def test_checkout_endpoint_requires_authentication():
         },
         format="json",
     )
-    assert response.status_code == 401
+    assert response.status_code == 201
+    assert response.json()["redirect_url"] == "https://stripe.example/checkout"
 
 
 @pytest.mark.django_db
@@ -504,6 +527,43 @@ def test_receipt_download_requires_owner_or_role(monkeypatch):
     )
     assert allowed.status_code == 200
     assert allowed.json()["url"] == "https://minio.example/receipts/RCT-1.pdf"
+
+
+@pytest.mark.django_db
+def test_my_receipts_lists_only_own_receipts():
+    owner = User.objects.create_user(username="receipt-owner-2", password="pass123")
+    stranger = User.objects.create_user(username="receipt-stranger-2", password="pass123")
+    ledger_entry = LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=2000, currency="GBP"
+    )
+    other_ledger_entry = LedgerEntry.objects.create(
+        entry_type="donation", direction="credit", amount_minor=3000, currency="GBP"
+    )
+    Receipt.objects.create(
+        ledger_entry=ledger_entry,
+        recipient=owner,
+        receipt_number="RCT-TEST-2",
+        amount_minor=2000,
+        currency="GBP",
+        pdf_file_key="receipts/RCT-TEST-2.pdf",
+    )
+    Receipt.objects.create(
+        ledger_entry=other_ledger_entry,
+        recipient=stranger,
+        receipt_number="RCT-TEST-3",
+        amount_minor=3000,
+        currency="GBP",
+        pdf_file_key="receipts/RCT-TEST-3.pdf",
+    )
+
+    owner_client = APIClient()
+    owner_client.force_authenticate(user=owner)
+    response = owner_client.get(reverse("finance-receipts-me"))
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["receipt_number"] == "RCT-TEST-2"
 
 
 @pytest.mark.django_db

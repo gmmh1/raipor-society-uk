@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.shop.presentation.views import (
+    AdminOrderListView,
     MyOrdersView,
     OrderCheckoutView,
     OrderCreateView,
@@ -18,6 +19,7 @@ urlpatterns = [
     ),
     path("orders/", OrderCreateView.as_view(), name="shop-orders-create"),
     path("orders/me/", MyOrdersView.as_view(), name="shop-orders-me"),
+    path("orders/admin/", AdminOrderListView.as_view(), name="shop-orders-admin-list"),
     path(
         "orders/<uuid:order_id>/checkout/",
         OrderCheckoutView.as_view(),

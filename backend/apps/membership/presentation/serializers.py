@@ -55,14 +55,18 @@ class MembershipTransitionSerializer(serializers.Serializer):
 
 class GuardianRelationshipSerializer(serializers.ModelSerializer):
     guardian_id = serializers.UUIDField(source="guardian.id", read_only=True)
+    guardian_username = serializers.CharField(source="guardian.username", read_only=True)
     child_id = serializers.UUIDField(source="child.id", read_only=True)
+    child_username = serializers.CharField(source="child.username", read_only=True)
 
     class Meta:
         model = GuardianRelationship
         fields = [
             "id",
             "guardian_id",
+            "guardian_username",
             "child_id",
+            "child_username",
             "relationship_type",
             "consent_given_at",
             "created_at",

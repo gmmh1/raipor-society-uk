@@ -17,7 +17,7 @@ from apps.finance.application.receipt_service import (
     get_receipt_download_url,
     issue_receipt,
 )
-from apps.finance.domain.types import PROVIDER_PAYPAL, PROVIDER_STRIPE
+from apps.finance.domain.types import ENTRY_TYPE_DONATION, PROVIDER_PAYPAL, PROVIDER_STRIPE
 from apps.finance.infrastructure.payment_adapters import (
     WebhookVerificationError,
     verify_paypal_signature,
@@ -165,15 +165,27 @@ class LedgerEntryListView(APIView):
 class CreateCheckoutSessionView(APIView):
     """Initiates an outbound Stripe/PayPal payment (donation, dues, or shop sale).
 
-    Open to any authenticated user (donations aren't role-gated); anonymous
-    checkout is deliberately not supported so every payment has a known payer.
+    Donations are open to anonymous supporters — the public Donate page (per
+    WEB_FEATURE_MATRIX.md) is the platform's primary giving surface and requiring
+    an account first would kill conversion, so ``create_checkout_session`` already
+    accepts ``payer=None``. Membership dues and shop sales still require a known
+    account: renewing a specific membership or paying for a specific order only
+    makes sense tied to an identity. See ADR 0014's Future considerations.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
+    throttle_scope = "checkout"
 
     def post(self, request):
         serializer = CreateCheckoutSessionRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
+        entry_type = serializer.validated_data["entry_type"]
+        if entry_type != ENTRY_TYPE_DONATION and not request.user.is_authenticated:
+            return Response(
+                {"detail": "Sign in required for this payment type."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         try:
             result = create_checkout_session(
@@ -227,6 +239,14 @@ class IssueReceiptView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ReceiptSerializer(receipt).data, status=status.HTTP_201_CREATED)
+
+
+class MyReceiptsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        receipts = Receipt.objects.filter(recipient=request.user).order_by("-created_at")
+        return Response(ReceiptSerializer(receipts, many=True).data)
 
 
 class ReceiptDownloadView(APIView):

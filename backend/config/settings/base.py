@@ -137,6 +137,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_THROTTLE_RATES": {
         "auth": env("AUTH_THROTTLE_RATE", default="5/min"),
+        "checkout": env("CHECKOUT_THROTTLE_RATE", default="20/hour"),
     },
 }
 

@@ -54,6 +54,14 @@ class ShopOrderSerializer(serializers.ModelSerializer):
         ]
 
 
+class AdminShopOrderSerializer(ShopOrderSerializer):
+    user_id = serializers.UUIDField(source="user.id", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta(ShopOrderSerializer.Meta):
+        fields = [*ShopOrderSerializer.Meta.fields, "user_id", "username"]
+
+
 class OrderTransitionSerializer(serializers.Serializer):
     order_id = serializers.UUIDField()
     to_status = serializers.ChoiceField(choices=[choice[0] for choice in ORDER_STATUS_CHOICES])

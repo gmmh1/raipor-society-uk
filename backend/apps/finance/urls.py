@@ -5,6 +5,7 @@ from apps.finance.presentation.views import (
     IssueReceiptView,
     LedgerEntryCreateView,
     LedgerEntryListView,
+    MyReceiptsView,
     PayPalWebhookIngestView,
     ReceiptDownloadView,
     ReconciliationSummaryView,
@@ -35,6 +36,7 @@ urlpatterns = [
         name="finance-reconciliation-summary",
     ),
     path("receipts/", IssueReceiptView.as_view(), name="finance-receipts-issue"),
+    path("receipts/me/", MyReceiptsView.as_view(), name="finance-receipts-me"),
     path(
         "receipts/<uuid:receipt_id>/download/",
         ReceiptDownloadView.as_view(),

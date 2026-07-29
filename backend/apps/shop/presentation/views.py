@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.common.pagination import StandardResultsPagination
 from apps.identity.permissions import HasAnyRole
 from apps.shop.application.order_service import (
     ShopError,
@@ -11,8 +12,10 @@ from apps.shop.application.order_service import (
     initiate_order_checkout,
     transition_order_status,
 )
+from apps.shop.domain.types import ORDER_STATUS_CHOICES
 from apps.shop.models import Product, ShopOrder
 from apps.shop.presentation.serializers import (
+    AdminShopOrderSerializer,
     OrderCheckoutRequestSerializer,
     OrderCheckoutSerializer,
     OrderCreateSerializer,
@@ -101,6 +104,34 @@ class OrderCheckoutView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(OrderCheckoutSerializer(result).data, status=status.HTTP_201_CREATED)
+
+
+class AdminOrderListView(APIView):
+    """All orders across all members, for order fulfilment/administration —
+    distinct from ``MyOrdersView``, which is scoped to the requesting user."""
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "volunteer", "treasurer")
+
+    def get(self, request):
+        valid_statuses = {choice[0] for choice in ORDER_STATUS_CHOICES}
+        status_filter = request.query_params.get("status", "").strip()
+
+        orders = ShopOrder.objects.select_related("user").prefetch_related(
+            "items", "items__product"
+        ).order_by("-created_at")
+        if status_filter:
+            if status_filter not in valid_statuses:
+                return Response(
+                    {"detail": f"Unknown status '{status_filter}'."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            orders = orders.filter(status=status_filter)
+
+        paginator = StandardResultsPagination()
+        page = paginator.paginate_queryset(orders, request)
+        serializer = AdminShopOrderSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
 class OrderTransitionView(APIView):
