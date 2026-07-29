@@ -28,6 +28,23 @@ def test_identity_me_returns_user_profile_and_roles():
     assert payload["username"] == "alice"
     assert payload["email"] == "alice@example.com"
     assert payload["roles"] == ["admin"]
+    assert payload["phone_number"] == ""
+
+
+@pytest.mark.django_db
+def test_identity_me_patch_updates_phone_number():
+    user = User.objects.create_user(username="dave", password="pass123")
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.patch(
+        reverse("identity-me"), data={"phone_number": "+441234567890"}, format="json"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["phone_number"] == "+441234567890"
+    user.refresh_from_db()
+    assert user.phone_number == "+441234567890"
 
 
 @pytest.mark.django_db

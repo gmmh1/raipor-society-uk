@@ -30,6 +30,7 @@ class Role(TimeStampedModel):
 class User(UUIDModel, TimeStampedModel, AbstractUser):
     roles = models.ManyToManyField(Role, blank=True, related_name="users")
     date_of_birth = models.DateField(null=True, blank=True)
+    phone_number = models.CharField(max_length=32, blank=True)
 
     class Meta:
         db_table = "identity_user"

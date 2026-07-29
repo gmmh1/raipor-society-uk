@@ -29,15 +29,23 @@ from apps.identity.presentation.serializers import (
     RegisterRequestSerializer,
     RoleAssignmentRequestSerializer,
     RoleCheckRequestSerializer,
+    UpdateProfileRequestSerializer,
     VerifyEmailRequestSerializer,
 )
 
 
-@api_view(["GET"])
+@api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def current_user_view(request):
-    serializer = CurrentUserSerializer(request.user)
-    return Response(serializer.data)
+    if request.method == "PATCH":
+        serializer = UpdateProfileRequestSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        for field, value in serializer.validated_data.items():
+            setattr(request.user, field, value)
+        if serializer.validated_data:
+            request.user.save(update_fields=[*serializer.validated_data.keys(), "updated_at"])
+
+    return Response(CurrentUserSerializer(request.user).data)
 
 
 @api_view(["POST"])

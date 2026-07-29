@@ -62,11 +62,24 @@ def enqueue_event_summary_task() -> int:
     return count
 
 
-@shared_task
-def dispatch_notification_task(notification_id: str) -> None:
+@shared_task(
+    bind=True,
+    max_retries=5,
+    retry_backoff=True,
+    retry_backoff_max=600,
+    retry_jitter=True,
+)
+def dispatch_notification_task(self, notification_id: str) -> None:
     try:
         notification = Notification.objects.get(id=notification_id)
     except Notification.DoesNotExist:
         return
 
-    dispatch_notification(notification)
+    try:
+        dispatch_notification(notification)
+    except Exception as exc:  # noqa: BLE001
+        # dispatch_notification already recorded status=failed + error_message for
+        # this attempt; retrying (with backoff) may still turn it into a success.
+        # After max_retries, Celery re-raises and the row is left in its last
+        # recorded "failed" state — that terminal state is the dead letter.
+        raise self.retry(exc=exc) from exc

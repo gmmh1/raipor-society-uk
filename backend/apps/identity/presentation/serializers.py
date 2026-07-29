@@ -11,6 +11,7 @@ class CurrentUserSerializer(serializers.Serializer):
     email = serializers.EmailField(allow_blank=True)
     first_name = serializers.CharField(allow_blank=True)
     last_name = serializers.CharField(allow_blank=True)
+    phone_number = serializers.CharField(allow_blank=True)
     is_active = serializers.BooleanField()
     roles = serializers.ListField(child=serializers.CharField(), read_only=True)
 
@@ -21,9 +22,14 @@ class CurrentUserSerializer(serializers.Serializer):
             "email": instance.email,
             "first_name": instance.first_name,
             "last_name": instance.last_name,
+            "phone_number": instance.phone_number,
             "is_active": instance.is_active,
             "roles": sorted(list_role_codes(instance)),
         }
+
+
+class UpdateProfileRequestSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(required=False, allow_blank=True, max_length=32)
 
 
 class RoleCheckRequestSerializer(serializers.Serializer):
