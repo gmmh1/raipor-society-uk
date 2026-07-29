@@ -22,4 +22,12 @@ app.conf.beat_schedule = {
         "task": "apps.notifications.tasks.enqueue_event_summary_task",
         "schedule": crontab(hour=6, minute=0),
     },
+    "check-reconciliation-variance-daily": {
+        "task": "apps.finance.tasks.check_reconciliation_variance_task",
+        "schedule": crontab(hour=3, minute=0),
+    },
+    "cancel-stale-shop-orders-every-10-minutes": {
+        "task": "apps.shop.tasks.cancel_stale_pending_orders_task",
+        "schedule": crontab(minute="*/10"),
+    },
 }

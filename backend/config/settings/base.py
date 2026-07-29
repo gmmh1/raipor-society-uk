@@ -16,12 +16,17 @@ DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 INSTALLED_APPS = [
+    # "daphne" must come before "django.contrib.staticfiles" — Channels' own
+    # requirement so ``manage.py runserver`` serves ASGI (and thus WebSockets) in
+    # development instead of Django's plain WSGI dev server.
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
@@ -33,6 +38,11 @@ INSTALLED_APPS = [
     "apps.notifications",
     "apps.finance",
     "apps.shop",
+    "apps.documents",
+    "apps.assistant",
+    "apps.chat",
+    "apps.voting",
+    "apps.analytics",
 ]
 
 MIDDLEWARE = [
@@ -124,6 +134,14 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG
 CELERY_BROKER_URL = env("CELERY_BROKER_URL", default="redis://redis:6379/0")
 CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://redis:6379/1")
 
+REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {"hosts": [REDIS_URL]},
+    },
+}
+
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # -------------------------------
@@ -145,8 +163,43 @@ WEB_APP_URL = env("WEB_APP_URL", default="http://localhost:3001")
 # -------------------------------
 # Payment provider webhook verification
 # -------------------------------
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 PAYPAL_WEBHOOK_ID = env("PAYPAL_WEBHOOK_ID", default="")
 PAYPAL_CLIENT_ID = env("PAYPAL_CLIENT_ID", default="")
 PAYPAL_CLIENT_SECRET = env("PAYPAL_CLIENT_SECRET", default="")
 PAYPAL_API_BASE = env("PAYPAL_API_BASE", default="https://api-m.sandbox.paypal.com")
+
+# -------------------------------
+# Object storage (MinIO / S3-compatible) for documents
+# -------------------------------
+S3_ENDPOINT = env("S3_ENDPOINT", default="http://minio:9000")
+S3_ACCESS_KEY = env("S3_ACCESS_KEY", default="minio")
+S3_SECRET_KEY = env("S3_SECRET_KEY", default="minio123")
+S3_BUCKET = env("S3_BUCKET", default="raipor-documents")
+S3_REGION = env("S3_REGION", default="us-east-1")
+
+# -------------------------------
+# AI / RAG (Ollama)
+# -------------------------------
+OLLAMA_BASE_URL = env("OLLAMA_BASE_URL", default="http://ollama:11434")
+LLM_MODEL = env("LLM_MODEL", default="qwen2.5:3b-instruct")
+EMBEDDING_MODEL = env("EMBEDDING_MODEL", default="bge-small")
+
+# -------------------------------
+# Push notifications (Web Push / VAPID) and WhatsApp Business API
+# -------------------------------
+VAPID_PUBLIC_KEY = env("VAPID_PUBLIC_KEY", default="")
+VAPID_PRIVATE_KEY = env("VAPID_PRIVATE_KEY", default="")
+VAPID_CLAIM_EMAIL = env("VAPID_CLAIM_EMAIL", default="admin@raipursociety.uk")
+
+WHATSAPP_API_URL = env("WHATSAPP_API_URL", default="https://graph.facebook.com/v20.0")
+WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
+WHATSAPP_API_TOKEN = env("WHATSAPP_API_TOKEN", default="")
+
+# -------------------------------
+# Shop
+# -------------------------------
+SHOP_ORDER_RESERVATION_TIMEOUT_MINUTES = env.int(
+    "SHOP_ORDER_RESERVATION_TIMEOUT_MINUTES", default=30
+)

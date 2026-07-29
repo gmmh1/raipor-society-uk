@@ -88,16 +88,16 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) for full deliverables/
 | Module | Status |
 |---|---|
 | 1. Authentication + RBAC | Done — JWT login/refresh/logout, registration + email verification, password reset, rate limiting, audited role assignment (ADR 0002, 0008) |
-| 2. Membership | Partial — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation, and required DOB at registration done (ADR 0009) |
-| 3. Events | Partial — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) done (ADR 0010) |
-| 4. Notifications | Partial — email delivery real, Celery beat schedule configured; push/WhatsApp adapters outstanding (need a `phone_number` field and, for push, a device-token model) |
-| 5. Finance | Partial — ledger, Stripe/PayPal webhook signature verification done; outbound checkout/payment-intent creation, receipts/invoices outstanding |
-| 6. Shop | Partial — catalog, inventory-aware orders, soft-deletable products done; Shop↔Finance payment integration outstanding |
-| 7. Documents | Not started |
-| 8. AI Knowledge Assistant | Not started |
-| 9. Chat | Not started |
-| 10. Voting | Not started |
-| 11. Analytics | Not started |
+| 2. Membership | Done — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation, required DOB at registration, admin list/search with pagination and filtering (ADR 0009) |
+| 3. Events | Done — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) (ADR 0010) |
+| 4. Notifications | Done — email delivery real, Web Push (VAPID) and WhatsApp Business API adapters, retry/backoff with dead-letter status, deduplication keys, Celery beat schedule configured (ADR 0013) |
+| 5. Finance | Done — ledger, Stripe/PayPal webhook signature verification, outbound Stripe/PayPal checkout, PDF receipts (WeasyPrint), daily reconciliation-variance alerting (ADR 0014) |
+| 6. Shop | Done — catalog, inventory-aware orders, soft-deletable products, Shop↔Finance checkout linkage, stock-reservation timeout cancellation (ADR 0015) |
+| 7. Documents | Done — upload/versioning with checksums, three-tier visibility access control, title/description/extracted-text search, MinIO storage abstraction, async PDF/OCR text extraction (ADR 0011) |
+| 8. AI Knowledge Assistant | Done — chunking, Ollama/BGE embeddings, pgvector storage, permission-scoped cosine retrieval, citation-first query endpoint, audit trail, re-index management command (ADR 0012); no ANN index or conversation memory yet |
+| 9. Chat | Done — real-time channels (Django Channels + channels_redis + daphne), JWT-authenticated WebSockets, direct/group channels, immutable messages with flag-based moderation, youth-safety rules restricting minors' direct messages and group membership to supervised contexts (ADR 0016) |
+| 10. Voting | Done — anonymous secret-ballot polls (participation and choice recorded in separate tables with no linking FK), database-level duplicate-vote prevention via a unique constraint + IntegrityError handling, quorum tracking, results hidden until close (ADR 0017) |
+| 11. Analytics | Done — staff-only governance/operations dashboard (`GET /api/analytics/overview/`), live ORM aggregation across all other modules with no separate reporting tables (ADR 0018) |
 
 Web (`web/app`) and mobile (`mobile/`) have no API integration yet regardless of backend module status.
 
