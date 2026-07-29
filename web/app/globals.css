@@ -680,6 +680,18 @@ a.card:hover {
   opacity: 0.9;
 }
 
+/* ---------- Sticky footer ---------- */
+
+.site-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.site-content {
+  flex: 1 0 auto;
+}
+
 /* ---------- Nav ---------- */
 
 .nav-wrap {

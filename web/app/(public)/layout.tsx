@@ -10,10 +10,10 @@ export default async function PublicLayout({
   const lang = await getLang();
 
   return (
-    <>
+    <div className="site-shell">
       <TopNav lang={lang} />
-      {children}
+      <div className="site-content">{children}</div>
       <SiteFooter lang={lang} />
-    </>
+    </div>
   );
 }
