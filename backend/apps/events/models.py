@@ -14,6 +14,7 @@ class Event(UUIDModel, TimeStampedModel, SoftDeleteModel):
     ends_at = models.DateTimeField()
     location = models.CharField(max_length=255, blank=True)
     capacity = models.PositiveIntegerField(default=0)
+    image_url = models.URLField(blank=True)
     is_published = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

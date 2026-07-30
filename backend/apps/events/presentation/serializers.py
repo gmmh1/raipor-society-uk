@@ -14,6 +14,7 @@ class EventSerializer(serializers.ModelSerializer):
             "ends_at",
             "location",
             "capacity",
+            "image_url",
             "is_published",
             "created_at",
             "updated_at",

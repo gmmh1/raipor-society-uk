@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "apps.membership",
     "apps.events",
     "apps.blog",
+    "apps.media",
     "apps.notifications",
     "apps.finance",
     "apps.shop",
@@ -201,6 +202,11 @@ S3_ACCESS_KEY = env("S3_ACCESS_KEY", default="minio")
 S3_SECRET_KEY = env("S3_SECRET_KEY", default="minio123")
 S3_BUCKET = env("S3_BUCKET", default="raipor-documents")
 S3_REGION = env("S3_REGION", default="us-east-1")
+
+# Django's 2.5MB default rejects multipart uploads (document versions, cover
+# images) well below apps.media's own 5MB cap, before that check even runs.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 # -------------------------------
 # AI / RAG (Ollama)

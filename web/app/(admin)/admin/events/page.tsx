@@ -9,6 +9,7 @@ type EventItem = {
   ends_at: string;
   location: string;
   capacity: number;
+  image_url: string;
 };
 
 function formatDate(value: string) {
@@ -41,6 +42,7 @@ export default async function AdminEventsPage() {
         <table className="table">
           <thead>
             <tr>
+              <th></th>
               <th>Title</th>
               <th>Starts</th>
               <th>Location</th>
@@ -51,6 +53,17 @@ export default async function AdminEventsPage() {
           <tbody>
             {sorted.map((event) => (
               <tr key={event.id}>
+                <td>
+                  {event.image_url ? (
+                    <img
+                      src={event.image_url}
+                      alt=""
+                      style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8 }}
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>{event.title}</td>
                 <td>{formatDate(event.starts_at)}</td>
                 <td>{event.location || "—"}</td>
@@ -62,7 +75,7 @@ export default async function AdminEventsPage() {
             ))}
             {!sorted.length && (
               <tr>
-                <td colSpan={5} style={{ color: "var(--muted)" }}>
+                <td colSpan={6} style={{ color: "var(--muted)" }}>
                   No published events yet.
                 </td>
               </tr>

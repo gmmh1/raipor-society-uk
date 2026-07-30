@@ -10,6 +10,7 @@ type EventItem = {
   description: string;
   starts_at: string;
   location: string;
+  image_url: string;
 };
 
 async function getUpcomingEvents(): Promise<EventItem[]> {
@@ -59,6 +60,19 @@ export default async function EventsPage() {
               <div className="grid grid-2" style={{ marginTop: 24 }}>
                 {events.map((event) => (
                   <article className="card" key={event.id}>
+                    {event.image_url && (
+                      <img
+                        src={event.image_url}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          aspectRatio: "16 / 9",
+                          objectFit: "cover",
+                          borderRadius: "var(--radius-sm)",
+                          marginBottom: 14,
+                        }}
+                      />
+                    )}
                     <span className="tag">{formatDate(event.starts_at)}</span>
                     <h3 style={{ marginTop: 14 }}>{event.title}</h3>
                     {event.location && <p style={{ marginTop: 6 }}>{event.location}</p>}

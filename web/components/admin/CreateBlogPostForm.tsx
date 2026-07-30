@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
 export function CreateBlogPostForm() {
   const router = useRouter();
@@ -60,16 +61,7 @@ export function CreateBlogPostForm() {
           onChange={(event) => setExcerpt(event.target.value)}
         />
       </div>
-      <div className="field">
-        <label>Cover image URL</label>
-        <input
-          className="input"
-          type="url"
-          placeholder="https://…"
-          value={coverImageUrl}
-          onChange={(event) => setCoverImageUrl(event.target.value)}
-        />
-      </div>
+      <ImageUploadField label="Cover image" value={coverImageUrl} onChange={setCoverImageUrl} />
       <div className="field">
         <label>Body</label>
         <textarea

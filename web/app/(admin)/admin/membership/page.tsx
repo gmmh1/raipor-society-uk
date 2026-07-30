@@ -1,9 +1,11 @@
 import { apiGet } from "@/lib/api";
 import { MembershipTransitionForm } from "@/components/admin/MembershipTransitionForm";
 import { LinkGuardianForm } from "@/components/admin/LinkGuardianForm";
+import { MessageMemberButton } from "@/components/admin/MessageMemberButton";
 
 type MembershipRow = {
   id: string;
+  user_id: string;
   username: string;
   email: string;
   is_minor: boolean;
@@ -91,8 +93,9 @@ export default async function AdminMembershipPage({
                     ? new Date(member.expires_at).toLocaleDateString("en-GB")
                     : "—"}
                 </td>
-                <td>
+                <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <MembershipTransitionForm membershipId={member.id} />
+                  <MessageMemberButton userId={member.user_id} />
                 </td>
               </tr>
             ))}

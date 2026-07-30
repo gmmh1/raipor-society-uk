@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
 export function CreateProductForm() {
   const router = useRouter();
@@ -92,16 +93,6 @@ export function CreateProductForm() {
           />
         </div>
         <div className="field">
-          <label>Image URL</label>
-          <input
-            className="input"
-            type="url"
-            placeholder="https://…"
-            value={imageUrl}
-            onChange={(event) => setImageUrl(event.target.value)}
-          />
-        </div>
-        <div className="field">
           <label>Sizes (comma-separated, optional)</label>
           <input
             className="input"
@@ -111,6 +102,7 @@ export function CreateProductForm() {
           />
         </div>
       </div>
+      <ImageUploadField label="Product photo" value={imageUrl} onChange={setImageUrl} />
       <div className="field">
         <label>Description</label>
         <textarea

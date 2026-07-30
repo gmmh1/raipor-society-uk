@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
 export function CreateEventForm() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export function CreateEventForm() {
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [capacity, setCapacity] = useState("0");
+  const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +34,7 @@ export function CreateEventForm() {
         starts_at: new Date(startsAt).toISOString(),
         ends_at: new Date(endsAt).toISOString(),
         capacity: Number(capacity) || 0,
+        image_url: imageUrl,
         is_published: true,
       },
     });
@@ -48,6 +51,7 @@ export function CreateEventForm() {
     setStartsAt("");
     setEndsAt("");
     setCapacity("0");
+    setImageUrl("");
     setLoading(false);
     router.refresh();
   }
@@ -99,6 +103,7 @@ export function CreateEventForm() {
           />
         </div>
       </div>
+      <ImageUploadField label="Event photo" value={imageUrl} onChange={setImageUrl} />
       <div className="field">
         <label>Description</label>
         <textarea

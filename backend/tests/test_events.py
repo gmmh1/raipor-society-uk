@@ -53,6 +53,7 @@ def test_events_create_requires_admin_or_volunteer_role():
         "title": "Role-Gated Event",
         "starts_at": (now + timedelta(days=1)).isoformat(),
         "ends_at": (now + timedelta(days=1, hours=1)).isoformat(),
+        "image_url": "https://example.com/event.jpg",
         "is_published": True,
     }
 
@@ -65,6 +66,7 @@ def test_events_create_requires_admin_or_volunteer_role():
     user.roles.add(volunteer)
     allowed = client.post(reverse("events-list-create"), data=payload, format="json")
     assert allowed.status_code == 201
+    assert allowed.json()["image_url"] == "https://example.com/event.jpg"
 
 
 @pytest.mark.django_db
