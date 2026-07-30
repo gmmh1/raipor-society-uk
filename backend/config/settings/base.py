@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "apps.events",
     "apps.blog",
     "apps.media",
+    "apps.timeline",
     "apps.notifications",
     "apps.finance",
     "apps.shop",

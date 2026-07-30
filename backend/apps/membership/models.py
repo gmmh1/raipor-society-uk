@@ -104,3 +104,30 @@ class MembershipStatusTransition(models.Model):
             models.Index(fields=["changed_at"]),
             models.Index(fields=["from_status", "to_status"]),
         ]
+
+
+class MemberProfile(UUIDModel, TimeStampedModel):
+    """Public-facing profile info for the About Us page — separate from Membership
+    (billing/status lifecycle) and from User (auth). ``position`` is admin-set only
+    (a self-declared committee title would be a spoofing risk); everything else is
+    the member's own, opt-in choice via ``public_consent``."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
+    position = models.CharField(max_length=128, blank=True)
+    avatar_url = models.URLField(blank=True)
+    bio = models.TextField(blank=True)
+    public_consent = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "membership_member_profile"
+        indexes = [
+            models.Index(fields=["public_consent", "position"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.user_id} profile"

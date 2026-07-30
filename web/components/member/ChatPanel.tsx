@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { VideoCallPanel } from "@/components/member/VideoCallPanel";
 
 type Channel = { id: string; name: string; channel_type: string };
 type Message = {
@@ -17,6 +18,7 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function loadMessages(channelId: string) {
@@ -29,6 +31,7 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
   }
 
   useEffect(() => {
+    setVideoOpen(false);
     if (!activeId) return;
     loadMessages(activeId);
 
@@ -85,6 +88,23 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
       </div>
 
       <div className="card" style={{ padding: 0, minHeight: 420, display: "flex", flexDirection: "column" }}>
+        {activeId && !videoOpen && (
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              padding: "12px 16px",
+              borderBottom: "1px solid var(--line)",
+            }}
+          >
+            <button type="button" className="btn btn-ghost" onClick={() => setVideoOpen(true)}>
+              Start video call
+            </button>
+          </div>
+        )}
+        {activeId && videoOpen && (
+          <VideoCallPanel channelId={activeId} onClose={() => setVideoOpen(false)} />
+        )}
         <div style={{ flex: 1, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           {messages.map((message) => (
             <div key={message.id}>

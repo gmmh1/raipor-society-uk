@@ -2,6 +2,7 @@ import { apiGet } from "@/lib/api";
 import { MembershipTransitionForm } from "@/components/admin/MembershipTransitionForm";
 import { LinkGuardianForm } from "@/components/admin/LinkGuardianForm";
 import { MessageMemberButton } from "@/components/admin/MessageMemberButton";
+import { SetPositionForm } from "@/components/admin/SetPositionForm";
 
 type MembershipRow = {
   id: string;
@@ -11,6 +12,7 @@ type MembershipRow = {
   is_minor: boolean;
   status: string;
   tier: string | null;
+  position: string;
   expires_at: string | null;
 };
 
@@ -67,6 +69,7 @@ export default async function AdminMembershipPage({
               <th>Member</th>
               <th>Status</th>
               <th>Tier</th>
+              <th>Position</th>
               <th>Expires</th>
               <th>Action</th>
             </tr>
@@ -89,6 +92,9 @@ export default async function AdminMembershipPage({
                 </td>
                 <td>{member.tier ?? "—"}</td>
                 <td>
+                  <SetPositionForm userId={member.user_id} currentPosition={member.position} />
+                </td>
+                <td>
                   {member.expires_at
                     ? new Date(member.expires_at).toLocaleDateString("en-GB")
                     : "—"}
@@ -101,7 +107,7 @@ export default async function AdminMembershipPage({
             ))}
             {!page?.results?.length && (
               <tr>
-                <td colSpan={5} style={{ color: "var(--muted)" }}>
+                <td colSpan={6} style={{ color: "var(--muted)" }}>
                   No members match this filter.
                 </td>
               </tr>

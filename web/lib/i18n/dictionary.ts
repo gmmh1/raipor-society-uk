@@ -92,6 +92,12 @@ const en = {
   "about.governanceTitle": "Member-led, transparently run.",
   "about.governanceBody":
     "Membership status, committee roles, and community votes are all handled through the society's own member portal, with an auditable record behind every decision — because trust is something we build in the open, not something we ask for.",
+  "about.committeeTitle": "Current committee",
+  "about.noCommittee": "Committee positions will be listed here once assigned.",
+  "about.membersTitle": "Members",
+  "about.noMembers": "Members who choose to share their profile publicly will appear here.",
+  "about.timelineTitle": "Our timeline",
+  "about.noTimeline": "Our history will be published here soon.",
 
   "programs.eyebrow": "Programs",
   "programs.title": "Community life, all year round.",
@@ -279,6 +285,12 @@ const bn: Partial<Record<keyof typeof en, string>> = {
   "about.governanceTitle": "সদস্য-নেতৃত্বাধীন, স্বচ্ছভাবে পরিচালিত।",
   "about.governanceBody":
     "সদস্যপদের অবস্থা, কমিটির ভূমিকা এবং কমিউনিটি ভোট সবকিছুই সোসাইটির নিজস্ব সদস্য পোর্টালের মাধ্যমে পরিচালিত হয়, প্রতিটি সিদ্ধান্তের পেছনে একটি নিরীক্ষণযোগ্য রেকর্ড সহ — কারণ বিশ্বাস এমন কিছু যা আমরা প্রকাশ্যে গড়ে তুলি, চেয়ে নিই না।",
+  "about.committeeTitle": "বর্তমান কমিটি",
+  "about.noCommittee": "কমিটির পদগুলি নির্ধারণ হলে এখানে তালিকাভুক্ত করা হবে।",
+  "about.membersTitle": "সদস্যবৃন্দ",
+  "about.noMembers": "যেসব সদস্য তাদের প্রোফাইল প্রকাশ্যে শেয়ার করতে চান তারা এখানে প্রদর্শিত হবেন।",
+  "about.timelineTitle": "আমাদের সময়রেখা",
+  "about.noTimeline": "আমাদের ইতিহাস শীঘ্রই এখানে প্রকাশিত হবে।",
 
   "programs.eyebrow": "কার্যক্রম",
   "programs.title": "সারা বছর জুড়ে কমিউনিটি জীবন।",

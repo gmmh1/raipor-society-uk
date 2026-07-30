@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from apps.membership.models import (
     GuardianRelationship,
+    MemberProfile,
     Membership,
     MembershipStatusTransition,
     MembershipTier,
@@ -34,3 +35,10 @@ class GuardianRelationshipAdmin(admin.ModelAdmin):
     list_display = ("id", "guardian", "child", "relationship_type", "consent_given_at")
     list_filter = ("relationship_type",)
     search_fields = ("guardian__username", "child__username")
+
+
+@admin.register(MemberProfile)
+class MemberProfileAdmin(admin.ModelAdmin):
+    list_display = ("id", "user", "position", "public_consent", "display_order")
+    list_filter = ("public_consent",)
+    search_fields = ("user__username", "user__email", "position")

@@ -1,6 +1,6 @@
 from django.db.models import Q
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -17,9 +17,15 @@ from apps.membership.application.lifecycle_service import (
     get_or_create_membership_for_user,
     transition_membership_status,
 )
+from apps.membership.application.profile_service import (
+    ProfileError,
+    get_or_create_profile_for_user,
+    set_position,
+    update_own_profile,
+)
 from apps.membership.application.tier_service import TierError, assign_tier, record_dues_payment
 from apps.membership.domain.status import STATUS_CHOICES
-from apps.membership.models import GuardianRelationship, Membership, MembershipTier
+from apps.membership.models import GuardianRelationship, MemberProfile, Membership, MembershipTier
 from apps.membership.presentation.serializers import (
     DuesRecordRequestSerializer,
     GuardianConsentRequestSerializer,
@@ -29,6 +35,10 @@ from apps.membership.presentation.serializers import (
     MembershipSerializer,
     MembershipTierSerializer,
     MembershipTransitionSerializer,
+    MyProfileSerializer,
+    ProfileUpdateRequestSerializer,
+    PublicProfileSerializer,
+    SetPositionRequestSerializer,
     TierAssignmentRequestSerializer,
 )
 
@@ -241,3 +251,64 @@ class DuesRecordView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(MembershipSerializer(updated).data)
+
+
+class MyProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = get_or_create_profile_for_user(request.user)
+        return Response(MyProfileSerializer(profile).data)
+
+    def post(self, request):
+        serializer = ProfileUpdateRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        profile = get_or_create_profile_for_user(request.user)
+        updated = update_own_profile(profile=profile, **serializer.validated_data)
+        return Response(MyProfileSerializer(updated).data)
+
+
+class AdminSetPositionView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, request):
+        serializer = SetPositionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            target_user = User.objects.get(id=serializer.validated_data["user_id"])
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        profile = get_or_create_profile_for_user(target_user)
+        try:
+            updated = set_position(
+                profile=profile,
+                position=serializer.validated_data["position"],
+                display_order=serializer.validated_data["display_order"],
+            )
+        except ProfileError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(MyProfileSerializer(updated).data)
+
+
+class PublicRosterView(APIView):
+    """Committee + general member cards for the public About Us page — only
+    profiles the member themselves opted into (``public_consent``)."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, _request):
+        consented = MemberProfile.objects.filter(public_consent=True).select_related("user")
+        committee = consented.exclude(position="").order_by("display_order", "user__first_name")
+        members = consented.filter(position="").order_by("user__first_name")
+
+        return Response(
+            {
+                "committee": PublicProfileSerializer(committee, many=True).data,
+                "members": PublicProfileSerializer(members, many=True).data,
+            }
+        )

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.membership.presentation.views import (
+    AdminSetPositionView,
     DuesRecordView,
     GuardianConsentView,
     GuardianLinkView,
@@ -9,12 +10,17 @@ from apps.membership.presentation.views import (
     MembershipTransitionView,
     MyGuardianRelationshipsView,
     MyMembershipView,
+    MyProfileView,
+    PublicRosterView,
     TierAssignmentView,
 )
 
 urlpatterns = [
     path("me/", MyMembershipView.as_view(), name="membership-me"),
     path("admin/", MembershipAdminListView.as_view(), name="membership-admin-list"),
+    path("profile/me/", MyProfileView.as_view(), name="membership-profile-me"),
+    path("profile/position/", AdminSetPositionView.as_view(), name="membership-profile-position"),
+    path("profile/public/", PublicRosterView.as_view(), name="membership-profile-public"),
     path("transitions/", MembershipTransitionView.as_view(), name="membership-transition"),
     path("guardians/link/", GuardianLinkView.as_view(), name="membership-guardians-link"),
     path("guardians/consent/", GuardianConsentView.as_view(), name="membership-guardians-consent"),

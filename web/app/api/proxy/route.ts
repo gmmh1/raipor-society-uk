@@ -42,6 +42,10 @@ const ALLOWED = [
   /^\/membership\/guardians\/link\/$/,
   /^\/membership\/guardians\/consent\/$/,
   /^\/finance\/receipts\/[0-9a-f-]{36}\/download\/$/,
+  /^\/membership\/profile\/me\/$/,
+  /^\/membership\/profile\/position\/$/,
+  /^\/timeline\/entries\/$/,
+  /^\/timeline\/entries\/[0-9a-f-]{36}\/delete\/$/,
 ];
 
 type ProxyBody = {
