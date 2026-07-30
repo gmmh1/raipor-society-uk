@@ -4,7 +4,7 @@ from django.utils import timezone
 
 from apps.identity.application.rbac_service import user_has_any_role
 from apps.voting.domain.types import (
-    MIN_ELECTION_CANDIDATES,
+    MAX_ELECTION_CANDIDATES,
     STAFF_ROLES,
     STATUS_CLOSED,
     STATUS_OPEN,
@@ -54,11 +54,14 @@ def create_poll(
     ]
     position = position.strip()
 
-    if position and len(cleaned_options) < MIN_ELECTION_CANDIDATES:
-        raise VotingError(
-            f"A position election needs at least {MIN_ELECTION_CANDIDATES} candidates."
-        )
-    if not position and len(cleaned_options) < 2:
+    if position:
+        if len(cleaned_options) < 1:
+            raise VotingError("A position election needs at least one candidate.")
+        if len(cleaned_options) > MAX_ELECTION_CANDIDATES:
+            raise VotingError(
+                f"A position election allows at most {MAX_ELECTION_CANDIDATES} candidates."
+            )
+    elif len(cleaned_options) < 2:
         raise VotingError("A poll needs at least two non-empty options.")
     if closes_at <= opens_at:
         raise VotingError("closes_at must be after opens_at.")

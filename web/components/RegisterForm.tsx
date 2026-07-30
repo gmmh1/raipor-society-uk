@@ -87,9 +87,6 @@ export function RegisterForm({ lang }: { lang: Lang }) {
     >
       <div className="card" style={{ maxWidth: 460, width: "100%", padding: 40 }}>
         <Link href="/" className="brand" style={{ marginBottom: 8 }}>
-          <span className="brand-mark" aria-hidden="true">
-            R
-          </span>
           Raipur Society UK
         </Link>
         <h1 style={{ fontSize: "1.9rem", marginTop: 22 }}>{t("register.title")}</h1>

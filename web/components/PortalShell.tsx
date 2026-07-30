@@ -33,9 +33,6 @@ export function PortalShell({
       <div className="portal-topbar">
         <div className="container portal-topbar-inner">
           <Link href="/" className="brand" style={{ color: "var(--chrome-text)" }}>
-            <span className="brand-mark" aria-hidden="true">
-              R
-            </span>
             Raipur Society UK
             <span className="portal-label">· {portalLabel}</span>
           </Link>

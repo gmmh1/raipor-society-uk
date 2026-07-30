@@ -784,25 +784,11 @@ a.card:hover {
   flex-shrink: 0;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--accent-gradient);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #14161a;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.1rem;
-  flex-shrink: 0;
-}
-
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 26px;
+  gap: 18px;
+  flex-wrap: wrap;
 }
 
 .nav-links a {
@@ -878,7 +864,7 @@ a.card:hover {
   padding: 14px 4px 6px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1280px) {
   .nav-links,
   .nav-auth {
     display: none;

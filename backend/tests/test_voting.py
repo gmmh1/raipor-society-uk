@@ -285,16 +285,16 @@ def test_poll_list_visibility_public_vs_member():
 
 
 @pytest.mark.django_db
-def test_position_election_requires_minimum_candidates():
+def test_position_election_rejects_more_than_ten_candidates():
     admin = _make_admin("poll-admin-election-1")
     now = timezone.now()
 
-    with pytest.raises(VotingError, match="at least 10 candidates"):
+    with pytest.raises(VotingError, match="at most 10 candidates"):
         create_poll(
             title="Chair Election",
             description="",
             position="Chair",
-            options=_opts(*[f"Candidate {i}" for i in range(9)]),
+            options=_opts(*[f"Candidate {i}" for i in range(11)]),
             opens_at=now,
             closes_at=now + timedelta(hours=1),
             quorum=0,
@@ -304,8 +304,29 @@ def test_position_election_requires_minimum_candidates():
 
 
 @pytest.mark.django_db
-def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
+def test_position_election_allows_a_single_candidate():
     admin = _make_admin("poll-admin-election-2")
+    now = timezone.now()
+
+    poll = create_poll(
+        title="Uncontested Chair",
+        description="",
+        position="Chair",
+        options=_opts("Only Candidate"),
+        opens_at=now,
+        closes_at=now + timedelta(hours=1),
+        quorum=0,
+        visibility="member",
+        creator=admin,
+    )
+
+    assert poll.position == "Chair"
+    assert poll.options.count() == 1
+
+
+@pytest.mark.django_db
+def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
+    admin = _make_admin("poll-admin-election-3")
     now = timezone.now()
 
     options = [
@@ -330,15 +351,15 @@ def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
 
 @pytest.mark.django_db
 def test_general_poll_still_allows_just_two_options():
-    admin = _make_admin("poll-admin-election-3")
+    admin = _make_admin("poll-admin-election-4")
     poll = _open_poll(creator=admin)
     assert poll.position == ""
     assert poll.options.count() == 2
 
 
 @pytest.mark.django_db
-def test_poll_create_endpoint_enforces_election_minimum():
-    admin = _make_admin("poll-admin-election-4")
+def test_poll_create_endpoint_enforces_election_maximum():
+    admin = _make_admin("poll-admin-election-5")
     now = timezone.now()
 
     client = APIClient()
@@ -351,13 +372,13 @@ def test_poll_create_endpoint_enforces_election_minimum():
         "opens_at": now.isoformat(),
         "closes_at": (now + timedelta(hours=1)).isoformat(),
         "quorum": 0,
-        "options": [{"text": f"Candidate {i}"} for i in range(5)],
+        "options": [{"text": f"Candidate {i}"} for i in range(11)],
     }
-    too_few = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
-    assert too_few.status_code == 400
+    too_many = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
+    assert too_many.status_code == 400
 
     payload["options"] = [{"text": f"Candidate {i}", "image_url": ""} for i in range(10)]
-    enough = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
-    assert enough.status_code == 201
-    assert enough.json()["position"] == "Treasurer"
-    assert len(enough.json()["options"]) == 10
+    ok = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
+    assert ok.status_code == 201
+    assert ok.json()["position"] == "Treasurer"
+    assert len(ok.json()["options"]) == 10

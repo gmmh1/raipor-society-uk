@@ -14,7 +14,6 @@ STATUS_CLOSED = "closed"
 # Who may create polls and see results early / for staff-only polls.
 STAFF_ROLES = ("admin", "volunteer")
 
-# A poll with a non-blank Poll.position (a committee-position election) must
-# have at least this many candidates, so voters get a real choice rather than
-# a rubber-stamp of one or two names.
-MIN_ELECTION_CANDIDATES = 10
+# A poll with a non-blank Poll.position (a committee-position election) can
+# have at most this many candidates standing for the one position — 1 to 10.
+MAX_ELECTION_CANDIDATES = 10

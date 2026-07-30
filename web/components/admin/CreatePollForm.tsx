@@ -5,7 +5,7 @@ import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
 
-const MIN_ELECTION_CANDIDATES = 10;
+const MAX_ELECTION_CANDIDATES = 10;
 
 type OptionInput = { text: string; imageUrl: string };
 
@@ -42,13 +42,17 @@ export function CreatePollForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const cleanedOptions = options.filter((option) => option.text.trim());
-    const minRequired = isElection ? MIN_ELECTION_CANDIDATES : 2;
-    if (cleanedOptions.length < minRequired) {
-      setError(
-        isElection
-          ? `A position election needs at least ${MIN_ELECTION_CANDIDATES} candidates.`
-          : "Add at least two options."
-      );
+    if (isElection) {
+      if (cleanedOptions.length < 1) {
+        setError("Add at least one candidate.");
+        return;
+      }
+      if (cleanedOptions.length > MAX_ELECTION_CANDIDATES) {
+        setError(`A position election allows at most ${MAX_ELECTION_CANDIDATES} candidates.`);
+        return;
+      }
+    } else if (cleanedOptions.length < 2) {
+      setError("Add at least two options.");
       return;
     }
     if (!opensAt || !closesAt) {
@@ -113,8 +117,8 @@ export function CreatePollForm() {
         />
         {isElection && (
           <p style={{ marginTop: 6, fontSize: "0.85rem", color: "var(--muted)" }}>
-            This is a position election — at least {MIN_ELECTION_CANDIDATES} candidates are
-            required, each with a photo so voters can recognise them.
+            This is a position election — up to {MAX_ELECTION_CANDIDATES} candidates, each with
+            a photo so voters can recognise them.
           </p>
         )}
       </div>
@@ -146,7 +150,7 @@ export function CreatePollForm() {
                   </div>
                 )}
               </div>
-              {options.length > 2 && (
+              {(isElection ? options.length > 1 : options.length > 2) && (
                 <button
                   type="button"
                   className="btn btn-ghost"
@@ -159,7 +163,13 @@ export function CreatePollForm() {
             </div>
           ))}
         </div>
-        <button type="button" className="btn btn-ghost" style={{ marginTop: 12 }} onClick={addOption}>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          style={{ marginTop: 12 }}
+          onClick={addOption}
+          disabled={isElection && options.length >= MAX_ELECTION_CANDIDATES}
+        >
           {isElection ? "Add candidate" : "Add option"}
         </button>
       </div>

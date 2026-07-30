@@ -26,9 +26,6 @@ export function TopNav({ lang }: { lang: Lang }) {
       <div className="container">
         <nav className="nav">
           <Link href="/" className="brand" onClick={() => setOpen(false)}>
-            <span className="brand-mark" aria-hidden="true">
-              R
-            </span>
             Raipur Society UK
           </Link>
 
