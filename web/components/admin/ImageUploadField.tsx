@@ -1,16 +1,21 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 export function ImageUploadField({
   label,
   value,
   onChange,
+  lang = "en",
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  lang?: Lang;
 }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +34,7 @@ export function ImageUploadField({
     const data = (await res.json().catch(() => ({}))) as { url?: string; detail?: string };
 
     if (!res.ok || !data.url) {
-      setError(data.detail || "Couldn't upload the image.");
+      setError(data.detail || t("adminCommon.uploadError"));
       setUploading(false);
       return;
     }
@@ -73,11 +78,11 @@ export function ImageUploadField({
               if (inputRef.current) inputRef.current.value = "";
             }}
           >
-            Remove
+            {t("adminCommon.remove")}
           </button>
         )}
       </div>
-      {uploading && <p style={{ marginTop: 6, color: "var(--muted)", fontSize: "0.85rem" }}>Uploading…</p>}
+      {uploading && <p style={{ marginTop: 6, color: "var(--muted)", fontSize: "0.85rem" }}>{t("adminCommon.uploading")}</p>}
       {error && <p className="form-error">{error}</p>}
     </div>
   );

@@ -32,7 +32,7 @@ export default async function AdminTimelinePage() {
       <h1 style={{ marginTop: 10 }}>{t("adminTimeline.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreateTimelineEntryForm />
+        <CreateTimelineEntryForm lang={lang} />
       </div>
 
       <h2 style={{ marginTop: 40 }}>{t("adminTimeline.allEntries")}</h2>
@@ -57,7 +57,7 @@ export default async function AdminTimelinePage() {
                   </span>
                 </td>
                 <td>
-                  <TimelineEntryDeleteButton entryId={entry.id} />
+                  <TimelineEntryDeleteButton entryId={entry.id} lang={lang} />
                 </td>
               </tr>
             ))}

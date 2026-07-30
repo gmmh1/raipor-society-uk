@@ -3,13 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function ArchiveDocumentButton({ documentId }: { documentId: string }) {
+export function ArchiveDocumentButton({ documentId, lang }: { documentId: string; lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
 
   async function handleClick() {
-    if (!window.confirm("Archive this document? Members will no longer see it.")) return;
+    if (!window.confirm(t("adminDocuments.archiveConfirm"))) return;
     setLoading(true);
     await callApi(`/documents/${documentId}/archive/`);
     router.refresh();
@@ -17,7 +20,7 @@ export function ArchiveDocumentButton({ documentId }: { documentId: string }) {
 
   return (
     <button type="button" className="btn btn-ghost" onClick={handleClick} disabled={loading}>
-      {loading ? "…" : "Archive"}
+      {loading ? "…" : t("adminCommon.archive")}
     </button>
   );
 }

@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 const MAX_ELECTION_CANDIDATES = 10;
 
@@ -13,8 +15,9 @@ function emptyOptions(count: number): OptionInput[] {
   return Array.from({ length: count }, () => ({ text: "", imageUrl: "" }));
 }
 
-export function CreatePollForm() {
+export function CreatePollForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [position, setPosition] = useState("");
@@ -44,19 +47,19 @@ export function CreatePollForm() {
     const cleanedOptions = options.filter((option) => option.text.trim());
     if (isElection) {
       if (cleanedOptions.length < 1) {
-        setError("Add at least one candidate.");
+        setError(t("adminGovernance.oneCandidate"));
         return;
       }
       if (cleanedOptions.length > MAX_ELECTION_CANDIDATES) {
-        setError(`A position election allows at most ${MAX_ELECTION_CANDIDATES} candidates.`);
+        setError(t("adminGovernance.maxCandidates").replace("{max}", String(MAX_ELECTION_CANDIDATES)));
         return;
       }
     } else if (cleanedOptions.length < 2) {
-      setError("Add at least two options.");
+      setError(t("adminGovernance.twoOptions"));
       return;
     }
     if (!opensAt || !closesAt) {
-      setError("Set both an opening and closing time.");
+      setError(t("adminGovernance.setTimes"));
       return;
     }
     setLoading(true);
@@ -76,7 +79,7 @@ export function CreatePollForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't create the poll.");
+      setError(result.data?.detail || t("adminGovernance.createError"));
       setLoading(false);
       return;
     }
@@ -94,13 +97,13 @@ export function CreatePollForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Create a poll</h3>
+      <h3>{t("adminGovernance.createPoll")}</h3>
       <div className="field">
-        <label>Title</label>
+        <label>{t("adminCommon.title")}</label>
         <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
       </div>
       <div className="field">
-        <label>Description</label>
+        <label>{t("adminCommon.description")}</label>
         <textarea
           className="textarea"
           value={description}
@@ -108,23 +111,22 @@ export function CreatePollForm() {
         />
       </div>
       <div className="field">
-        <label>Committee position (leave blank for a general poll)</label>
+        <label>{t("adminGovernance.positionLabel")}</label>
         <input
           className="input"
-          placeholder="e.g. Chair, Secretary, Treasurer"
+          placeholder={t("adminGovernance.positionPlaceholder")}
           value={position}
           onChange={(event) => setPosition(event.target.value)}
         />
         {isElection && (
           <p style={{ marginTop: 6, fontSize: "0.85rem", color: "var(--muted)" }}>
-            This is a position election — up to {MAX_ELECTION_CANDIDATES} candidates, each with
-            a photo so voters can recognise them.
+            {t("adminGovernance.electionHint").replace("{max}", String(MAX_ELECTION_CANDIDATES))}
           </p>
         )}
       </div>
 
       <div className="field">
-        <label>{isElection ? "Candidates" : "Options"}</label>
+        <label>{isElection ? t("adminGovernance.candidates") : t("adminGovernance.options")}</label>
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 16 }}>
           {options.map((option, index) => (
             <div
@@ -136,16 +138,17 @@ export function CreatePollForm() {
                 <input
                   className="input"
                   style={{ marginTop: 0 }}
-                  placeholder={isElection ? "Candidate name" : `Option ${index + 1}`}
+                  placeholder={isElection ? t("adminGovernance.candidateName") : `${t("adminGovernance.optionN")} ${index + 1}`}
                   value={option.text}
                   onChange={(event) => updateOption(index, { text: event.target.value })}
                 />
                 {isElection && (
                   <div style={{ marginTop: 10 }}>
                     <ImageUploadField
-                      label="Photo"
+                      label={t("adminCommon.photo")}
                       value={option.imageUrl}
                       onChange={(url) => updateOption(index, { imageUrl: url })}
+                      lang={lang}
                     />
                   </div>
                 )}
@@ -157,7 +160,7 @@ export function CreatePollForm() {
                   onClick={() => removeOption(index)}
                   style={{ flexShrink: 0 }}
                 >
-                  Remove
+                  {t("adminCommon.remove")}
                 </button>
               )}
             </div>
@@ -170,13 +173,13 @@ export function CreatePollForm() {
           onClick={addOption}
           disabled={isElection && options.length >= MAX_ELECTION_CANDIDATES}
         >
-          {isElection ? "Add candidate" : "Add option"}
+          {isElection ? t("adminGovernance.addCandidate") : t("adminGovernance.addOption")}
         </button>
       </div>
 
       <div className="grid grid-2" style={{ marginTop: 0 }}>
         <div className="field">
-          <label>Opens</label>
+          <label>{t("adminGovernance.opensLabel")}</label>
           <input
             className="input"
             type="datetime-local"
@@ -186,7 +189,7 @@ export function CreatePollForm() {
           />
         </div>
         <div className="field">
-          <label>Closes</label>
+          <label>{t("adminGovernance.closesLabel")}</label>
           <input
             className="input"
             type="datetime-local"
@@ -196,7 +199,7 @@ export function CreatePollForm() {
           />
         </div>
         <div className="field">
-          <label>Quorum</label>
+          <label>{t("adminGovernance.quorumLabel")}</label>
           <input
             className="input"
             type="number"
@@ -208,7 +211,7 @@ export function CreatePollForm() {
       </div>
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Creating…" : "Create poll"}
+        {loading ? t("adminGovernance.creating") : t("adminGovernance.createButton")}
       </button>
     </form>
   );

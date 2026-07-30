@@ -3,9 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function RecordLedgerEntryForm() {
+export function RecordLedgerEntryForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [entryType, setEntryType] = useState("donation");
   const [direction, setDirection] = useState("credit");
   const [amount, setAmount] = useState("");
@@ -17,7 +20,7 @@ export function RecordLedgerEntryForm() {
     event.preventDefault();
     const amountMinor = Math.round(Number(amount) * 100);
     if (!amountMinor || amountMinor <= 0) {
-      setError("Enter a valid amount.");
+      setError(t("adminFinance.amountError"));
       return;
     }
     setLoading(true);
@@ -34,7 +37,7 @@ export function RecordLedgerEntryForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't record that entry.");
+      setError(result.data?.detail || t("adminFinance.createError"));
       setLoading(false);
       return;
     }
@@ -47,27 +50,27 @@ export function RecordLedgerEntryForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Record a manual entry</h3>
+      <h3>{t("adminFinance.recordEntry")}</h3>
       <div className="grid grid-2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Type</label>
+          <label>{t("adminFinance.typeLabel")}</label>
           <select className="select" value={entryType} onChange={(event) => setEntryType(event.target.value)}>
-            <option value="donation">Donation</option>
-            <option value="membership_fee">Membership fee</option>
-            <option value="shop_sale">Shop sale</option>
-            <option value="expense">Expense</option>
-            <option value="refund">Refund</option>
+            <option value="donation">{t("adminFinance.typeDonation")}</option>
+            <option value="membership_fee">{t("adminFinance.typeMembershipFee")}</option>
+            <option value="shop_sale">{t("adminFinance.typeShopSale")}</option>
+            <option value="expense">{t("adminFinance.typeExpense")}</option>
+            <option value="refund">{t("adminFinance.typeRefund")}</option>
           </select>
         </div>
         <div className="field">
-          <label>Direction</label>
+          <label>{t("adminFinance.directionLabel")}</label>
           <select className="select" value={direction} onChange={(event) => setDirection(event.target.value)}>
-            <option value="credit">Credit (in)</option>
-            <option value="debit">Debit (out)</option>
+            <option value="credit">{t("adminFinance.directionCredit")}</option>
+            <option value="debit">{t("adminFinance.directionDebit")}</option>
           </select>
         </div>
         <div className="field">
-          <label>Amount (GBP)</label>
+          <label>{t("adminFinance.amountLabel")}</label>
           <input
             className="input"
             type="number"
@@ -79,7 +82,7 @@ export function RecordLedgerEntryForm() {
           />
         </div>
         <div className="field">
-          <label>Description</label>
+          <label>{t("adminCommon.description")}</label>
           <input
             className="input"
             value={description}
@@ -89,7 +92,7 @@ export function RecordLedgerEntryForm() {
       </div>
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Recording…" : "Record entry"}
+        {loading ? t("adminFinance.recording") : t("adminFinance.recordButton")}
       </button>
     </form>
   );

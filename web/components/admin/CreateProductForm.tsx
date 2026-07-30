@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function CreateProductForm() {
+export function CreateProductForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [description, setDescription] = useState("");
@@ -21,7 +24,7 @@ export function CreateProductForm() {
     event.preventDefault();
     const priceMinor = Math.round(Number(price) * 100);
     if (!priceMinor || priceMinor <= 0) {
-      setError("Enter a valid price.");
+      setError(t("adminShop.priceError"));
       return;
     }
     setLoading(true);
@@ -42,7 +45,7 @@ export function CreateProductForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't create the product.");
+      setError(result.data?.detail || t("adminShop.createError"));
       setLoading(false);
       return;
     }
@@ -60,18 +63,18 @@ export function CreateProductForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Add a product</h3>
+      <h3>{t("adminShop.addProduct")}</h3>
       <div className="grid grid-2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Name</label>
+          <label>{t("adminShop.name")}</label>
           <input className="input" value={name} onChange={(event) => setName(event.target.value)} required />
         </div>
         <div className="field">
-          <label>SKU</label>
+          <label>{t("adminShop.colSku")}</label>
           <input className="input" value={sku} onChange={(event) => setSku(event.target.value)} required />
         </div>
         <div className="field">
-          <label>Price (GBP)</label>
+          <label>{t("adminShop.priceLabel")}</label>
           <input
             className="input"
             type="number"
@@ -83,7 +86,7 @@ export function CreateProductForm() {
           />
         </div>
         <div className="field">
-          <label>Stock</label>
+          <label>{t("adminShop.stockLabel")}</label>
           <input
             className="input"
             type="number"
@@ -93,7 +96,7 @@ export function CreateProductForm() {
           />
         </div>
         <div className="field">
-          <label>Sizes (comma-separated, optional)</label>
+          <label>{t("adminShop.sizesLabel")}</label>
           <input
             className="input"
             placeholder="S,M,L,XL"
@@ -102,9 +105,9 @@ export function CreateProductForm() {
           />
         </div>
       </div>
-      <ImageUploadField label="Product photo" value={imageUrl} onChange={setImageUrl} />
+      <ImageUploadField label={t("adminShop.productPhoto")} value={imageUrl} onChange={setImageUrl} lang={lang} />
       <div className="field">
-        <label>Description</label>
+        <label>{t("adminCommon.description")}</label>
         <textarea
           className="textarea"
           value={description}
@@ -113,7 +116,7 @@ export function CreateProductForm() {
       </div>
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Adding…" : "Add product"}
+        {loading ? t("adminShop.adding") : t("adminShop.addButton")}
       </button>
     </form>
   );

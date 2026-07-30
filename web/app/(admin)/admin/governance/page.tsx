@@ -38,7 +38,7 @@ export default async function AdminGovernancePage() {
       <h1 style={{ marginTop: 10 }}>{t("adminGovernance.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreatePollForm />
+        <CreatePollForm lang={lang} />
       </div>
 
       <div className="grid grid-2" style={{ marginTop: 24 }}>

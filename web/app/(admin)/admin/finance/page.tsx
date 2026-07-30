@@ -73,7 +73,7 @@ export default async function AdminFinancePage() {
       )}
 
       <div style={{ marginTop: 24 }}>
-        <RecordLedgerEntryForm />
+        <RecordLedgerEntryForm lang={lang} />
       </div>
 
       <div className="card" style={{ marginTop: 24, overflowX: "auto" }}>

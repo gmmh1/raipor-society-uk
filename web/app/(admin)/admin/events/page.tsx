@@ -37,7 +37,7 @@ export default async function AdminEventsPage() {
       <h1 style={{ marginTop: 10 }}>{t("adminEvents.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreateEventForm />
+        <CreateEventForm lang={lang} />
       </div>
 
       <h2 style={{ marginTop: 40 }}>{t("adminEvents.publishedEvents")}</h2>
@@ -72,7 +72,7 @@ export default async function AdminEventsPage() {
                 <td>{event.location || "—"}</td>
                 <td>{event.capacity > 0 ? event.capacity : t("adminEvents.unlimited")}</td>
                 <td>
-                  <EventCancelButton eventId={event.id} />
+                  <EventCancelButton eventId={event.id} lang={lang} />
                 </td>
               </tr>
             ))}

@@ -3,15 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 export function SetPositionForm({
   userId,
   currentPosition,
+  lang,
 }: {
   userId: string;
   currentPosition: string;
+  lang: Lang;
 }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [position, setPosition] = useState(currentPosition);
   const [loading, setLoading] = useState(false);
 
@@ -30,12 +35,12 @@ export function SetPositionForm({
       <input
         className="input"
         style={{ marginTop: 0, width: 140 }}
-        placeholder="No position"
+        placeholder={t("adminMembership.noPosition")}
         value={position}
         onChange={(event) => setPosition(event.target.value)}
       />
       <button type="submit" className="btn btn-ghost" disabled={loading}>
-        {loading ? "…" : "Set"}
+        {loading ? "…" : t("adminMembership.set")}
       </button>
     </form>
   );

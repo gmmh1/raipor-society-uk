@@ -42,7 +42,7 @@ export default async function AdminMembershipPage({
       <h1 style={{ marginTop: 10 }}>{t("adminMembership.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <LinkGuardianForm />
+        <LinkGuardianForm lang={lang} />
       </div>
 
       <form method="GET" className="card" style={{ marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -96,7 +96,7 @@ export default async function AdminMembershipPage({
                 </td>
                 <td>{member.tier ?? "—"}</td>
                 <td>
-                  <SetPositionForm userId={member.user_id} currentPosition={member.position} />
+                  <SetPositionForm userId={member.user_id} currentPosition={member.position} lang={lang} />
                 </td>
                 <td>
                   {member.expires_at
@@ -104,8 +104,8 @@ export default async function AdminMembershipPage({
                     : "—"}
                 </td>
                 <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <MembershipTransitionForm membershipId={member.id} />
-                  <MessageMemberButton userId={member.user_id} />
+                  <MembershipTransitionForm membershipId={member.id} lang={lang} />
+                  <MessageMemberButton userId={member.user_id} lang={lang} />
                 </td>
               </tr>
             ))}

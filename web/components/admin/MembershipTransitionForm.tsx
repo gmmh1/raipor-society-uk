@@ -3,11 +3,27 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-const STATUSES = ["pending", "active", "suspended", "expired", "cancelled"];
+const STATUSES = ["pending", "active", "suspended", "expired", "cancelled"] as const;
 
-export function MembershipTransitionForm({ membershipId }: { membershipId: string }) {
+export function MembershipTransitionForm({
+  membershipId,
+  lang,
+}: {
+  membershipId: string;
+  lang: Lang;
+}) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+  const statusLabels: Record<(typeof STATUSES)[number], string> = {
+    pending: t("adminMembership.statusPending"),
+    active: t("adminMembership.statusActive"),
+    suspended: t("adminMembership.statusSuspended"),
+    expired: t("adminMembership.statusExpired"),
+    cancelled: t("adminMembership.statusCancelled"),
+  };
   const [toStatus, setToStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +39,7 @@ export function MembershipTransitionForm({ membershipId }: { membershipId: strin
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "That transition isn't allowed.");
+      setError(result.data?.detail || t("adminMembership.transitionError"));
       setLoading(false);
       return;
     }
@@ -40,15 +56,15 @@ export function MembershipTransitionForm({ membershipId }: { membershipId: strin
         value={toStatus}
         onChange={(event) => setToStatus(event.target.value)}
       >
-        <option value="">Change status…</option>
+        <option value="">{t("adminMembership.changeStatus")}</option>
         {STATUSES.map((status) => (
           <option key={status} value={status}>
-            {status}
+            {statusLabels[status]}
           </option>
         ))}
       </select>
       <button type="submit" className="btn btn-ghost" disabled={loading || !toStatus}>
-        {loading ? "…" : "Apply"}
+        {loading ? "…" : t("adminMembership.apply")}
       </button>
       {error && <span style={{ color: "var(--rose)", fontSize: "0.82rem" }}>{error}</span>}
     </form>

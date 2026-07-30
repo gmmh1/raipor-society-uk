@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function CreateBlogPostForm() {
+export function CreateBlogPostForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [body, setBody] = useState("");
@@ -31,7 +34,7 @@ export function CreateBlogPostForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't create the post.");
+      setError(result.data?.detail || t("adminBlog.createError"));
       setLoading(false);
       return;
     }
@@ -47,13 +50,13 @@ export function CreateBlogPostForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Write a post</h3>
+      <h3>{t("adminBlog.writePost")}</h3>
       <div className="field">
-        <label>Title</label>
+        <label>{t("adminCommon.title")}</label>
         <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
       </div>
       <div className="field">
-        <label>Excerpt</label>
+        <label>{t("adminBlog.excerpt")}</label>
         <input
           className="input"
           maxLength={400}
@@ -61,9 +64,9 @@ export function CreateBlogPostForm() {
           onChange={(event) => setExcerpt(event.target.value)}
         />
       </div>
-      <ImageUploadField label="Cover image" value={coverImageUrl} onChange={setCoverImageUrl} />
+      <ImageUploadField label={t("adminBlog.coverImage")} value={coverImageUrl} onChange={setCoverImageUrl} lang={lang} />
       <div className="field">
-        <label>Body</label>
+        <label>{t("adminBlog.body")}</label>
         <textarea
           className="textarea"
           style={{ minHeight: 200 }}
@@ -79,12 +82,12 @@ export function CreateBlogPostForm() {
           onChange={(event) => setPublishNow(event.target.checked)}
         />
         <label htmlFor="publish-now" style={{ fontWeight: 400 }}>
-          Publish immediately
+          {t("adminBlog.publishImmediately")}
         </label>
       </div>
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Saving…" : "Save post"}
+        {loading ? t("adminBlog.saving") : t("adminBlog.savePost")}
       </button>
     </form>
   );

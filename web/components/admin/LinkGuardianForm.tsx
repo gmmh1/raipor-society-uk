@@ -3,11 +3,19 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-const RELATIONSHIP_TYPES = ["parent", "legal_guardian", "other"];
+const RELATIONSHIP_TYPES = ["parent", "legal_guardian", "other"] as const;
 
-export function LinkGuardianForm() {
+export function LinkGuardianForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+  const relationshipLabels: Record<(typeof RELATIONSHIP_TYPES)[number], string> = {
+    parent: t("adminGuardian.relParent"),
+    legal_guardian: t("adminGuardian.relLegalGuardian"),
+    other: t("adminGuardian.relOther"),
+  };
   const [guardianId, setGuardianId] = useState("");
   const [childId, setChildId] = useState("");
   const [relationshipType, setRelationshipType] = useState("parent");
@@ -26,7 +34,7 @@ export function LinkGuardianForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't link these members.");
+      setError(result.data?.detail || t("adminGuardian.error"));
       setLoading(false);
       return;
     }
@@ -40,14 +48,13 @@ export function LinkGuardianForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Link a guardian to a minor member</h3>
+      <h3>{t("adminGuardian.title")}</h3>
       <p style={{ marginTop: 6, color: "var(--muted)", fontSize: "0.85rem" }}>
-        Copy member IDs from the table below. The guardian will need to confirm consent from
-        their own account.
+        {t("adminGuardian.body")}
       </p>
       <div className="grid grid-2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Guardian member ID</label>
+          <label>{t("adminGuardian.guardianId")}</label>
           <input
             className="input"
             value={guardianId}
@@ -56,7 +63,7 @@ export function LinkGuardianForm() {
           />
         </div>
         <div className="field">
-          <label>Child member ID</label>
+          <label>{t("adminGuardian.childId")}</label>
           <input
             className="input"
             value={childId}
@@ -65,7 +72,7 @@ export function LinkGuardianForm() {
           />
         </div>
         <div className="field">
-          <label>Relationship</label>
+          <label>{t("adminGuardian.relationship")}</label>
           <select
             className="select"
             value={relationshipType}
@@ -73,16 +80,16 @@ export function LinkGuardianForm() {
           >
             {RELATIONSHIP_TYPES.map((option) => (
               <option key={option} value={option}>
-                {option.replace("_", " ")}
+                {relationshipLabels[option]}
               </option>
             ))}
           </select>
         </div>
       </div>
       {error && <p className="form-error">{error}</p>}
-      {success && <p className="form-success">Linked — awaiting the guardian's consent.</p>}
+      {success && <p className="form-success">{t("adminGuardian.success")}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Linking…" : "Link guardian"}
+        {loading ? t("adminGuardian.linking") : t("adminGuardian.linkGuardian")}
       </button>
     </form>
   );

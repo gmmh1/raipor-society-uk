@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 const NEXT_STATUS: Record<string, string[]> = {
   pending: ["paid", "cancelled"],
@@ -11,10 +13,24 @@ const NEXT_STATUS: Record<string, string[]> = {
   cancelled: [],
 };
 
-export function OrderTransitionForm({ orderId, status }: { orderId: string; status: string }) {
+export function OrderTransitionForm({
+  orderId,
+  status,
+  lang,
+}: {
+  orderId: string;
+  status: string;
+  lang: Lang;
+}) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
   const options = NEXT_STATUS[status] ?? [];
+  const optionLabels: Record<string, string> = {
+    paid: t("adminShop.markPaid"),
+    cancelled: t("adminShop.markCancelled"),
+    fulfilled: t("adminShop.markFulfilled"),
+  };
 
   async function handleTransition(toStatus: string) {
     setLoading(true);
@@ -34,7 +50,7 @@ export function OrderTransitionForm({ orderId, status }: { orderId: string; stat
           disabled={loading}
           onClick={() => handleTransition(option)}
         >
-          Mark {option}
+          {optionLabels[option] ?? option}
         </button>
       ))}
     </div>

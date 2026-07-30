@@ -45,7 +45,7 @@ export default async function AdminShopPage() {
       <h1 style={{ marginTop: 10 }}>{t("adminShop.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreateProductForm />
+        <CreateProductForm lang={lang} />
       </div>
 
       <div className="card" style={{ marginTop: 24, overflowX: "auto" }}>
@@ -81,7 +81,7 @@ export default async function AdminShopPage() {
                 <td>{product.inventory_count}</td>
                 <td>{product.available_sizes || "—"}</td>
                 <td>
-                  <ProductDeactivateButton productId={product.id} />
+                  <ProductDeactivateButton productId={product.id} lang={lang} />
                 </td>
               </tr>
             ))}
@@ -118,7 +118,7 @@ export default async function AdminShopPage() {
                 </td>
                 <td>{money(order.total_minor, order.currency)}</td>
                 <td>
-                  <OrderTransitionForm orderId={order.id} status={order.status} />
+                  <OrderTransitionForm orderId={order.id} status={order.status} lang={lang} />
                 </td>
               </tr>
             ))}

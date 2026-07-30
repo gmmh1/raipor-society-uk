@@ -37,7 +37,7 @@ export default async function AdminBlogPage() {
       <h1 style={{ marginTop: 10 }}>{t("adminBlog.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreateBlogPostForm />
+        <CreateBlogPostForm lang={lang} />
       </div>
 
       <h2 style={{ marginTop: 40 }}>{t("adminBlog.allPosts")}</h2>
@@ -64,7 +64,7 @@ export default async function AdminBlogPage() {
                 </td>
                 <td>{formatDate(post.published_at)}</td>
                 <td>
-                  <BlogPostActions postId={post.id} isPublished={post.is_published} />
+                  <BlogPostActions postId={post.id} isPublished={post.is_published} lang={lang} />
                 </td>
               </tr>
             ))}

@@ -64,7 +64,7 @@ export function ProfileForm({
         </p>
       )}
 
-      <ImageUploadField label={t("memberProfile.photo")} value={avatarUrl} onChange={setAvatarUrl} />
+      <ImageUploadField label={t("memberProfile.photo")} value={avatarUrl} onChange={setAvatarUrl} lang={lang} />
 
       <div className="field">
         <label>{t("memberProfile.phoneNumber")}</label>

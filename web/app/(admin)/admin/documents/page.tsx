@@ -31,7 +31,7 @@ export default async function AdminDocumentsPage() {
       <h1 style={{ marginTop: 10 }}>{t("adminDocuments.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
-        <CreateDocumentForm />
+        <CreateDocumentForm lang={lang} />
       </div>
 
       <div className="grid grid-2" style={{ marginTop: 24 }}>
@@ -51,8 +51,8 @@ export default async function AdminDocumentsPage() {
                   : t("adminDocuments.noFile")}
               </p>
               <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                <UploadDocumentVersionForm documentId={document.id} />
-                <ArchiveDocumentButton documentId={document.id} />
+                <UploadDocumentVersionForm documentId={document.id} lang={lang} />
+                <ArchiveDocumentButton documentId={document.id} lang={lang} />
               </div>
             </article>
           );

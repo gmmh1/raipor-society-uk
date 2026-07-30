@@ -4,9 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function CreateEventForm() {
+export function CreateEventForm({ lang }: { lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
@@ -20,7 +23,7 @@ export function CreateEventForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (!startsAt || !endsAt) {
-      setError("Set a start and end time.");
+      setError(t("adminEvents.setTimeError"));
       return;
     }
     setLoading(true);
@@ -40,7 +43,7 @@ export function CreateEventForm() {
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't create the event.");
+      setError(result.data?.detail || t("adminEvents.createError"));
       setLoading(false);
       return;
     }
@@ -58,14 +61,14 @@ export function CreateEventForm() {
 
   return (
     <form onSubmit={handleSubmit} className="card">
-      <h3>Add an event</h3>
+      <h3>{t("adminEvents.addEvent")}</h3>
       <div className="grid grid-2" style={{ marginTop: 14 }}>
         <div className="field">
-          <label>Title</label>
+          <label>{t("adminCommon.title")}</label>
           <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} required />
         </div>
         <div className="field">
-          <label>Location</label>
+          <label>{t("adminEvents.colLocationLabel")}</label>
           <input
             className="input"
             value={location}
@@ -73,7 +76,7 @@ export function CreateEventForm() {
           />
         </div>
         <div className="field">
-          <label>Starts</label>
+          <label>{t("adminEvents.startsLabel")}</label>
           <input
             className="input"
             type="datetime-local"
@@ -83,7 +86,7 @@ export function CreateEventForm() {
           />
         </div>
         <div className="field">
-          <label>Ends</label>
+          <label>{t("adminEvents.endsLabel")}</label>
           <input
             className="input"
             type="datetime-local"
@@ -93,7 +96,7 @@ export function CreateEventForm() {
           />
         </div>
         <div className="field">
-          <label>Capacity (0 = unlimited)</label>
+          <label>{t("adminEvents.capacityLabel")}</label>
           <input
             className="input"
             type="number"
@@ -103,9 +106,9 @@ export function CreateEventForm() {
           />
         </div>
       </div>
-      <ImageUploadField label="Event photo" value={imageUrl} onChange={setImageUrl} />
+      <ImageUploadField label={t("adminEvents.eventPhoto")} value={imageUrl} onChange={setImageUrl} lang={lang} />
       <div className="field">
-        <label>Description</label>
+        <label>{t("adminCommon.description")}</label>
         <textarea
           className="textarea"
           value={description}
@@ -114,7 +117,7 @@ export function CreateEventForm() {
       </div>
       {error && <p className="form-error">{error}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Adding…" : "Add event"}
+        {loading ? t("adminEvents.adding") : t("adminEvents.addButton")}
       </button>
     </form>
   );
