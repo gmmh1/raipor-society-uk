@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type Membership = {
   status: string;
@@ -17,11 +19,13 @@ type Notification = {
 };
 
 export default async function MemberDashboardPage() {
-  const [membership, registrations, notifications] = await Promise.all([
+  const [membership, registrations, notifications, lang] = await Promise.all([
     apiGet<Membership>("/membership/me/"),
     apiGet<EventRegistration[]>("/events/registrations/me/"),
     apiGet<Notification[]>("/notifications/me/"),
+    getLang(),
   ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   const upcoming = (registrations ?? []).filter(
     (registration) =>
@@ -30,50 +34,50 @@ export default async function MemberDashboardPage() {
 
   return (
     <div>
-      <span className="eyebrow">Member portal</span>
-      <h1 style={{ marginTop: 10 }}>Welcome back.</h1>
+      <span className="eyebrow">{t("dashboard.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("dashboard.welcome")}</h1>
 
       <div className="grid grid-4" style={{ marginTop: 32 }}>
         <div className="card stat">
-          <span className="stat-label">Membership</span>
+          <span className="stat-label">{t("dashboard.membership")}</span>
           <span className={`status-pill status-${membership?.status ?? "pending"}`}>
-            {membership?.status ?? "Unknown"}
+            {membership?.status ?? t("dashboard.unknown")}
           </span>
         </div>
         <div className="card stat">
           <span className="stat-value">{upcoming.length}</span>
-          <span className="stat-label">Upcoming events</span>
+          <span className="stat-label">{t("dashboard.upcomingEvents")}</span>
         </div>
         <div className="card stat">
           <span className="stat-value">{notifications?.length ?? 0}</span>
-          <span className="stat-label">Notifications</span>
+          <span className="stat-label">{t("dashboard.notifications")}</span>
         </div>
         <div className="card stat">
           <span className="stat-value">
             {membership?.expires_at
-              ? new Date(membership.expires_at).toLocaleDateString("en-GB")
+              ? new Date(membership.expires_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")
               : "—"}
           </span>
-          <span className="stat-label">Renews on</span>
+          <span className="stat-label">{t("dashboard.renewsOn")}</span>
         </div>
       </div>
 
       <div className="grid grid-2" style={{ marginTop: 20 }}>
         <Link href="/member/events" className="card">
-          <h3>Events</h3>
-          <p style={{ marginTop: 6 }}>Register for gatherings and view your history.</p>
+          <h3>{t("dashboard.eventsTitle")}</h3>
+          <p style={{ marginTop: 6 }}>{t("dashboard.eventsBody")}</p>
         </Link>
         <Link href="/member/documents" className="card">
-          <h3>Documents</h3>
-          <p style={{ marginTop: 6 }}>Policies and society documents shared with members.</p>
+          <h3>{t("dashboard.documentsTitle")}</h3>
+          <p style={{ marginTop: 6 }}>{t("dashboard.documentsBody")}</p>
         </Link>
         <Link href="/member/voting" className="card">
-          <h3>Voting</h3>
-          <p style={{ marginTop: 6 }}>Take part in open polls and committee decisions.</p>
+          <h3>{t("dashboard.votingTitle")}</h3>
+          <p style={{ marginTop: 6 }}>{t("dashboard.votingBody")}</p>
         </Link>
         <Link href="/member/assistant" className="card">
-          <h3>Ask the assistant</h3>
-          <p style={{ marginTop: 6 }}>Get answers grounded in the society's own documents.</p>
+          <h3>{t("dashboard.assistantTitle")}</h3>
+          <p style={{ marginTop: 6 }}>{t("dashboard.assistantBody")}</p>
         </Link>
       </div>
     </div>

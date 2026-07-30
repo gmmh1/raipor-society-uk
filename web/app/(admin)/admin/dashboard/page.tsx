@@ -1,4 +1,6 @@
 import { apiGet } from "@/lib/api";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type Overview = {
   membership: { total: number; by_status: Record<string, number> };
@@ -21,39 +23,36 @@ function money(minor: number, currency: string) {
 }
 
 export default async function AdminDashboardPage() {
-  const overview = await apiGet<Overview>("/analytics/overview/");
+  const [overview, lang] = await Promise.all([apiGet<Overview>("/analytics/overview/"), getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   if (!overview) {
-    return (
-      <div className="empty-state card">
-        Couldn't load analytics. You may not have permission, or the service is unreachable.
-      </div>
-    );
+    return <div className="empty-state card">{t("adminDashboard.loadError")}</div>;
   }
 
   return (
     <div>
-      <span className="eyebrow">Operations</span>
-      <h1 style={{ marginTop: 10 }}>Society overview</h1>
+      <span className="eyebrow">{t("adminDashboard.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("adminDashboard.title")}</h1>
 
       <div className="grid grid-4" style={{ marginTop: 28 }}>
         <div className="card stat">
           <span className="stat-value">{overview.membership.total}</span>
-          <span className="stat-label">Members</span>
+          <span className="stat-label">{t("adminDashboard.members")}</span>
         </div>
         <div className="card stat">
           <span className="stat-value">{overview.events.upcoming_events}</span>
-          <span className="stat-label">Upcoming events</span>
+          <span className="stat-label">{t("adminDashboard.upcomingEvents")}</span>
         </div>
         <div className="card stat">
           <span className="stat-value">
             {money(overview.finance.credit_last_30_days_minor, overview.finance.currency)}
           </span>
-          <span className="stat-label">Raised, last 30 days</span>
+          <span className="stat-label">{t("adminDashboard.raisedLast30")}</span>
         </div>
         <div className="card stat">
           <span className="stat-value">{overview.voting.open_polls}</span>
-          <span className="stat-label">Open polls</span>
+          <span className="stat-label">{t("adminDashboard.openPolls")}</span>
         </div>
       </div>
 
@@ -62,17 +61,14 @@ export default async function AdminDashboardPage() {
           className="card"
           style={{ marginTop: 20, borderColor: "var(--rose)", background: "rgba(255,68,51,0.07)" }}
         >
-          <strong style={{ color: "var(--rose)" }}>Reconciliation variance flagged</strong>
-          <p style={{ marginTop: 6 }}>
-            Ledger credits from payments don't match succeeded payment transactions. Review the
-            Finance tab.
-          </p>
+          <strong style={{ color: "var(--rose)" }}>{t("adminDashboard.reconciliationFlag")}</strong>
+          <p style={{ marginTop: 6 }}>{t("adminDashboard.reconciliationBody")}</p>
         </div>
       )}
 
       <div className="grid grid-2" style={{ marginTop: 20 }}>
         <div className="card">
-          <h3>Membership by status</h3>
+          <h3>{t("adminDashboard.membershipByStatus")}</h3>
           <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
             {Object.entries(overview.membership.by_status).map(([status, count]) => (
               <span key={status} className={`status-pill status-${status}`}>
@@ -82,12 +78,20 @@ export default async function AdminDashboardPage() {
           </div>
         </div>
         <div className="card">
-          <h3>Platform activity</h3>
+          <h3>{t("adminDashboard.platformActivity")}</h3>
           <ul style={{ marginTop: 14, listStyle: "none", padding: 0, display: "grid", gap: 8 }}>
-            <li>Documents on file: {overview.documents.total_documents}</li>
-            <li>AI assistant questions (7d): {overview.assistant.interactions_last_7_days}</li>
-            <li>Chat messages: {overview.chat.total_messages}</li>
-            <li>Shop orders: {overview.shop.total_orders}</li>
+            <li>
+              {t("adminDashboard.documentsOnFile")}: {overview.documents.total_documents}
+            </li>
+            <li>
+              {t("adminDashboard.assistantQuestions")}: {overview.assistant.interactions_last_7_days}
+            </li>
+            <li>
+              {t("adminDashboard.chatMessages")}: {overview.chat.total_messages}
+            </li>
+            <li>
+              {t("adminDashboard.shopOrders")}: {overview.shop.total_orders}
+            </li>
           </ul>
         </div>
       </div>

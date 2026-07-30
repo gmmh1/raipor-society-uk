@@ -1,21 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { PortalShell } from "@/components/PortalShell";
 import { getLang } from "@/lib/i18n/server";
-
-const tabs = [
-  { href: "/member/dashboard", label: "Dashboard" },
-  { href: "/member/profile", label: "Profile" },
-  { href: "/member/membership", label: "Membership" },
-  { href: "/member/events", label: "Events" },
-  { href: "/member/orders", label: "Orders" },
-  { href: "/member/receipts", label: "Receipts" },
-  { href: "/member/documents", label: "Documents" },
-  { href: "/member/family", label: "Family" },
-  { href: "/member/voting", label: "Voting" },
-  { href: "/member/chat", label: "Chat" },
-  { href: "/member/notifications", label: "Notifications" },
-  { href: "/member/assistant", label: "Assistant" },
-];
+import { translate } from "@/lib/i18n/dictionary";
 
 type CurrentUser = {
   username: string;
@@ -26,9 +12,25 @@ type CurrentUser = {
 
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const [user, lang] = await Promise.all([apiGet<CurrentUser>("/identity/me/"), getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
+  const tabs = [
+    { href: "/member/dashboard", label: t("portal.tab.dashboard") },
+    { href: "/member/profile", label: t("portal.tab.profile") },
+    { href: "/member/membership", label: t("portal.tab.membership") },
+    { href: "/member/events", label: t("portal.tab.events") },
+    { href: "/member/orders", label: t("portal.tab.orders") },
+    { href: "/member/receipts", label: t("portal.tab.receipts") },
+    { href: "/member/documents", label: t("portal.tab.documents") },
+    { href: "/member/family", label: t("portal.tab.family") },
+    { href: "/member/voting", label: t("portal.tab.voting") },
+    { href: "/member/chat", label: t("portal.tab.chat") },
+    { href: "/member/notifications", label: t("portal.tab.notifications") },
+    { href: "/member/assistant", label: t("portal.tab.assistant") },
+  ];
 
   return (
-    <PortalShell portalLabel="Member Portal" tabs={tabs} user={user} lang={lang}>
+    <PortalShell portalLabel={t("portal.memberLabel")} tabs={tabs} user={user} lang={lang}>
       {children}
     </PortalShell>
   );
