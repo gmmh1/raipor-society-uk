@@ -150,6 +150,8 @@ const en = {
   "events.noneBody":
     "We're setting up our events calendar. Get in touch to be added to our updates list, and you'll hear about gatherings as soon as they're scheduled.",
   "events.cta": "Get event updates",
+  "events.upcomingTitle": "Upcoming events",
+  "events.signIn": "Sign in to register",
 
   "register.title": "Become a member",
   "register.subtitle": "Join the community — it only takes a minute.",
@@ -334,6 +336,8 @@ const bn: Partial<Record<keyof typeof en, string>> = {
   "events.noneBody":
     "আমরা আমাদের ইভেন্ট ক্যালেন্ডার প্রস্তুত করছি। আমাদের আপডেট তালিকায় যুক্ত হতে যোগাযোগ করুন, সমাবেশের সময়সূচী নির্ধারিত হওয়ার সাথে সাথেই আপনি জানতে পারবেন।",
   "events.cta": "ইভেন্ট আপডেট পান",
+  "events.upcomingTitle": "আসন্ন ইভেন্ট",
+  "events.signIn": "নিবন্ধনের জন্য সাইন ইন করুন",
 
   "register.title": "সদস্য হন",
   "register.subtitle": "কমিউনিটিতে যোগ দিন — মাত্র এক মিনিট সময় লাগবে।",

@@ -57,7 +57,7 @@ export function RegisterForm({ lang }: { lang: Lang }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "var(--ink)",
+          background: "var(--chrome-bg)",
           padding: 24,
         }}
       >
@@ -81,7 +81,7 @@ export function RegisterForm({ lang }: { lang: Lang }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--ink)",
+        background: "var(--chrome-bg)",
         padding: 24,
       }}
     >

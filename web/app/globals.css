@@ -34,6 +34,16 @@
   --glass-dark-border: rgba(255, 255, 255, 0.14);
   --glass-blur: blur(18px) saturate(160%);
 
+  /* Fixed (theme-independent) colors for the deliberately-dark decorative
+     sections (hero, footer, portal topbar) — these stay dark in light mode
+     *and* dark mode, so they must not flip with --ink/--paper below. */
+  --chrome-bg: #14161a;
+  --chrome-text: #f2f3ef;
+  /* Text color for content sitting directly on a bright accent fill (the
+     primary button, ::selection) — accents stay equally bright in both
+     themes, so this never flips either. */
+  --on-accent: #14161a;
+
   --font-display: "Instrument Serif", Georgia, serif;
   --font-body: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
@@ -45,6 +55,49 @@
 html:lang(bn) {
   --font-display: var(--font-bengali-display), "Noto Serif Bengali", Georgia, serif;
   --font-body: var(--font-bengali-body), "Noto Sans Bengali", -apple-system, sans-serif;
+}
+
+/* ---------- Dark mode ----------
+   Two ways in: the OS-level `prefers-color-scheme` (used when the visitor
+   hasn't picked a theme yet) and an explicit `data-theme` attribute the
+   toggle stamps onto <html> (always wins, in either direction — a manual
+   choice must override the system setting, not just supplement it). */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #f2f3ef;
+    --ink-soft: #c7ccd3;
+    --paper: #121316;
+    --paper-raised: #1c1f24;
+    --muted: #9aa1ab;
+    --line: #2b2f36;
+
+    --lime-deep: #c8f24d;
+    --orange-deep: #ffab5c;
+    --red-deep: #ff8a7a;
+    --success: #c8f24d;
+
+    --glass-bg: rgba(28, 31, 36, 0.55);
+    --glass-bg-strong: rgba(22, 24, 28, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.09);
+  }
+}
+
+:root[data-theme="dark"] {
+  --ink: #f2f3ef;
+  --ink-soft: #c7ccd3;
+  --paper: #121316;
+  --paper-raised: #1c1f24;
+  --muted: #9aa1ab;
+  --line: #2b2f36;
+
+  --lime-deep: #c8f24d;
+  --orange-deep: #ffab5c;
+  --red-deep: #ff8a7a;
+  --success: #c8f24d;
+
+  --glass-bg: rgba(28, 31, 36, 0.55);
+  --glass-bg-strong: rgba(22, 24, 28, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.09);
 }
 
 * {
@@ -80,7 +133,7 @@ img {
 
 ::selection {
   background: var(--lime);
-  color: var(--ink);
+  color: var(--on-accent);
 }
 
 a:focus-visible,
@@ -391,8 +444,8 @@ a.card:hover {
 
 .portal-topbar {
   position: relative;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
   overflow: hidden;
 }
 
@@ -535,7 +588,7 @@ a.card:hover {
 
 .btn-primary {
   background: var(--lime);
-  color: var(--ink);
+  color: var(--on-accent);
   box-shadow: 0 10px 24px -12px rgba(111, 156, 0, 0.55);
 }
 
@@ -557,7 +610,7 @@ a.card:hover {
 }
 
 .btn-ghost {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--glass-bg-strong);
   border-color: var(--line);
   color: var(--ink);
 }
@@ -583,8 +636,8 @@ a.card:hover {
 
 .hero {
   position: relative;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
   overflow: hidden;
   padding: clamp(72px, 12vw, 140px) 0 clamp(60px, 9vw, 100px);
 }
@@ -623,7 +676,7 @@ a.card:hover {
 }
 
 .hero h1 {
-  color: var(--paper);
+  color: var(--chrome-text);
   margin: 18px 0 22px;
 }
 
@@ -651,7 +704,8 @@ a.card:hover {
 .cta-banner {
   position: relative;
   overflow: hidden;
-  background: var(--ink);
+  background: var(--chrome-bg);
+  color: var(--chrome-text);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
   padding: clamp(32px, 5vw, 48px);
@@ -870,11 +924,44 @@ a.card:hover {
   border-color: var(--lime);
 }
 
+/* ---------- Theme toggle ---------- */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  background: var(--glass-bg-strong);
+  color: var(--ink);
+  border-radius: 999px;
+  width: 38px;
+  height: 38px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  border-color: var(--lime-deep);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-dark {
+  border-color: rgba(250, 248, 244, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--chrome-text);
+}
+
+.theme-toggle-dark:hover {
+  border-color: var(--lime);
+}
+
 /* ---------- Footer ---------- */
 
 .footer {
   position: relative;
-  background: var(--ink);
+  background: var(--chrome-bg);
   color: rgba(250, 248, 244, 0.7);
   padding: 52px 0 26px;
   overflow: hidden;
@@ -889,7 +976,7 @@ a.card:hover {
 }
 
 .footer h3 {
-  color: var(--paper);
+  color: var(--chrome-text);
   font-size: 1.1rem;
   margin-bottom: 14px;
 }

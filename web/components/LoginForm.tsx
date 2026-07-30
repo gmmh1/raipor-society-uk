@@ -54,7 +54,7 @@ function LoginFields({ lang }: { lang: Lang }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--ink)",
+        background: "var(--chrome-bg)",
         padding: 24,
       }}
     >

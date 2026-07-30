@@ -77,7 +77,7 @@ export default async function HomePage() {
         <div className="container">
           <div className="cta-banner">
             <div style={{ maxWidth: 480, position: "relative" }}>
-              <h2 style={{ color: "var(--paper)" }}>{t("home.ctaTitle")}</h2>
+              <h2 style={{ color: "var(--chrome-text)" }}>{t("home.ctaTitle")}</h2>
               <p style={{ color: "rgba(250,248,244,0.75)", marginTop: 10 }}>{t("home.ctaBody")}</p>
             </div>
             <div style={{ display: "flex", gap: 14, flexWrap: "wrap", position: "relative" }}>

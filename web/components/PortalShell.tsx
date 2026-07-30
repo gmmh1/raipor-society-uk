@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogoutButton } from "@/components/LogoutButton";
 import { PortalTabs } from "@/components/PortalTabs";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Lang } from "@/lib/i18n/config";
 
 type CurrentUser = {
@@ -31,7 +32,7 @@ export function PortalShell({
     <div className="portal-shell">
       <div className="portal-topbar">
         <div className="container portal-topbar-inner">
-          <Link href="/" className="brand" style={{ color: "var(--paper)" }}>
+          <Link href="/" className="brand" style={{ color: "var(--chrome-text)" }}>
             <span className="brand-mark" aria-hidden="true">
               R
             </span>
@@ -39,6 +40,7 @@ export function PortalShell({
             <span className="portal-label">· {portalLabel}</span>
           </Link>
           <div className="portal-user-group">
+            <ThemeToggle dark />
             <LanguageSwitcher lang={lang} dark />
             <span className="portal-user-name">{displayName}</span>
             <LogoutButton />

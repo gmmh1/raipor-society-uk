@@ -30,7 +30,7 @@ function VerifyEmailContent() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "var(--ink)",
+        background: "var(--chrome-bg)",
         padding: 24,
       }}
     >

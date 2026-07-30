@@ -5,6 +5,7 @@ import { useState } from "react";
 import { translate } from "@/lib/i18n/dictionary";
 import type { Lang } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function TopNav({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState(false);
@@ -40,6 +41,7 @@ export function TopNav({ lang }: { lang: Lang }) {
 
           <div className="nav-cta">
             <div className="nav-auth">
+              <ThemeToggle />
               <LanguageSwitcher lang={lang} />
               <Link href="/login" className="btn btn-ghost">
                 {t("nav.signIn")}
@@ -75,7 +77,8 @@ export function TopNav({ lang }: { lang: Lang }) {
           <Link href="/register" onClick={() => setOpen(false)}>
             {t("nav.join")}
           </Link>
-          <div className="mobile-panel-lang">
+          <div className="mobile-panel-lang" style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <ThemeToggle />
             <LanguageSwitcher lang={lang} />
           </div>
         </div>
