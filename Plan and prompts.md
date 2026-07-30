@@ -1,10 +1,10 @@
-Below is the **final strategic blueprint** for the **Raipor Society UK Open Source Community Operating System**, followed by a **Claude Code master prompt** optimised for low token usage, open-source development, and long-term maintainability.
+Below is the **final strategic blueprint** for the **Raipur Society UK Open Source Community Operating System**, followed by a **Claude Code master prompt** optimised for low token usage, open-source development, and long-term maintainability.
 
 The goal is not to build a complicated "super app". The goal is to build a **stable digital foundation** that a charity can operate for years with low costs and future volunteer/developer handover.
 
 ---
 
-# Raipor Society UK — Open Source Digital Ecosystem Plan
+# Raipur Society UK — Open Source Digital Ecosystem Plan
 
 ## Vision
 
@@ -574,7 +574,7 @@ CLAUDE.md
 ---
 
 ```text
-You are the Lead Software Architect and Senior Engineer responsible for building the Raipor Society UK Open Source Community Operating System.
+You are the Lead Software Architect and Senior Engineer responsible for building the Raipur Society UK Open Source Community Operating System.
 
 This is a charitable organisation project.
 

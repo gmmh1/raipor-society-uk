@@ -23,7 +23,7 @@ class EmailNotificationAdapter(NotificationAdapter):
             raise ValueError("Recipient has no email address to send to.")
 
         send_mail(
-            subject=subject or "Raipor Society UK",
+            subject=subject or "Raipur Society UK",
             message=body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[recipient.email],
@@ -45,7 +45,7 @@ class WebPushNotificationAdapter(NotificationAdapter):
         if not subscriptions:
             raise ValueError("Recipient has no active push subscriptions.")
 
-        payload = {"title": subject or "Raipor Society UK", "body": body}
+        payload = {"title": subject or "Raipur Society UK", "body": body}
         last_error: Exception | None = None
         delivered = False
 

@@ -33,7 +33,7 @@ export function VideoCallPanel({ channelId, onClose }: { channelId: string; onCl
     function mount() {
       if (disposed || !containerRef.current || !window.JitsiMeetExternalAPI) return;
       api = new window.JitsiMeetExternalAPI(JITSI_DOMAIN, {
-        roomName: `raipor-society-uk-${channelId}`,
+        roomName: `raipur-society-uk-${channelId}`,
         parentNode: containerRef.current,
         width: "100%",
         height: "100%",

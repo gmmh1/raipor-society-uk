@@ -29,7 +29,7 @@ export function TopNav({ lang }: { lang: Lang }) {
             <span className="brand-mark" aria-hidden="true">
               R
             </span>
-            Raipor Society UK
+            Raipur Society UK
           </Link>
 
           <div className="nav-links">

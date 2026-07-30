@@ -36,7 +36,7 @@ export function PortalShell({
             <span className="brand-mark" aria-hidden="true">
               R
             </span>
-            Raipor Society UK
+            Raipur Society UK
             <span className="portal-label">· {portalLabel}</span>
           </Link>
           <div className="portal-user-group">

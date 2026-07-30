@@ -10,7 +10,7 @@ export function SiteFooter({ lang }: { lang: Lang }) {
       <div className="container">
         <div className="footer-grid">
           <div>
-            <h3>Raipor Society UK</h3>
+            <h3>Raipur Society UK</h3>
             <p style={{ color: "rgba(250,248,244,0.65)", maxWidth: "38ch" }}>{t("footer.about")}</p>
           </div>
 
@@ -31,7 +31,7 @@ export function SiteFooter({ lang }: { lang: Lang }) {
         </div>
 
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} Raipor Society UK. {t("footer.rights")}</span>
+          <span>© {new Date().getFullYear()} Raipur Society UK. {t("footer.rights")}</span>
           <span>{t("footer.registered")}</span>
         </div>
       </div>

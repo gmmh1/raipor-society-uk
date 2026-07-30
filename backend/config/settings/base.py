@@ -95,7 +95,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
 DATABASES = {
-    "default": env.db("DATABASE_URL", default="postgresql://raipor:raipor_dev_password@postgres:5432/raipor")
+    "default": env.db("DATABASE_URL", default="postgresql://raipur:raipur_dev_password@postgres:5432/raipur")
 }
 
 LANGUAGE_CODE = "en-gb"
@@ -181,7 +181,7 @@ EMAIL_PORT = env.int("SMTP_PORT", default=1025)
 EMAIL_HOST_USER = env("SMTP_USER", default="")
 EMAIL_HOST_PASSWORD = env("SMTP_PASSWORD", default="")
 EMAIL_USE_TLS = env.bool("SMTP_USE_TLS", default=not DEBUG)
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@raiporsociety.org.uk")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@raipursociety.org.uk")
 
 WEB_APP_URL = env("WEB_APP_URL", default="http://localhost:3001")
 
@@ -201,6 +201,10 @@ PAYPAL_API_BASE = env("PAYPAL_API_BASE", default="https://api-m.sandbox.paypal.c
 S3_ENDPOINT = env("S3_ENDPOINT", default="http://minio:9000")
 S3_ACCESS_KEY = env("S3_ACCESS_KEY", default="minio")
 S3_SECRET_KEY = env("S3_SECRET_KEY", default="minio123")
+# NOT a typo left in place: this must match the real, already-provisioned
+# Railway bucket name exactly (renaming a bucket means migrating its data,
+# not just relabeling it) — production overrides this via the S3_BUCKET env
+# var regardless, so this default only matters for local/dev.
 S3_BUCKET = env("S3_BUCKET", default="raipor-documents")
 S3_REGION = env("S3_REGION", default="us-east-1")
 

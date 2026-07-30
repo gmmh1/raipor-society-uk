@@ -11,7 +11,7 @@ export type CartItem = {
   size?: string;
 };
 
-const STORAGE_KEY = "raipor_cart";
+const STORAGE_KEY = "raipur_cart";
 
 function readCart(): CartItem[] {
   if (typeof window === "undefined") return [];

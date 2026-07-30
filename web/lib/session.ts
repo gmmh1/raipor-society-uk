@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 
-export const ACCESS_COOKIE = "raipor_access";
-export const REFRESH_COOKIE = "raipor_refresh";
+export const ACCESS_COOKIE = "raipur_access";
+export const REFRESH_COOKIE = "raipur_refresh";
 
 const isProd = process.env.NEXT_PUBLIC_ENVIRONMENT === "production";
 

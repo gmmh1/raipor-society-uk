@@ -33,7 +33,7 @@ const bengaliBody = Noto_Sans_Bengali({
 });
 
 export const metadata: Metadata = {
-  title: "Raipor Society UK",
+  title: "Raipur Society UK",
   description:
     "A community bringing people together through culture, learning, and collective progress — Unity, Culture, Friendship, Progress.",
 };

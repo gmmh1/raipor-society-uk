@@ -28,7 +28,7 @@ export function DonateForm() {
           entry_type: "donation",
           amount_minor: amountMinor,
           currency: "GBP",
-          description: "Donation to Raipor Society UK",
+          description: "Donation to Raipur Society UK",
           success_url: `${origin}/donate?thanks=1`,
           cancel_url: `${origin}/donate`,
         },

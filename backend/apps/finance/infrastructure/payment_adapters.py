@@ -80,7 +80,7 @@ def create_stripe_checkout_session(
             {
                 "price_data": {
                     "currency": currency.lower(),
-                    "product_data": {"name": description or "Payment to Raipor Society UK"},
+                    "product_data": {"name": description or "Payment to Raipur Society UK"},
                     "unit_amount": amount_minor,
                 },
                 "quantity": 1,
@@ -106,7 +106,7 @@ def create_paypal_order(
             "purchase_units": [
                 {
                     "amount": {"currency_code": currency.upper(), "value": value},
-                    "description": description or "Payment to Raipor Society UK",
+                    "description": description or "Payment to Raipur Society UK",
                 }
             ],
             "application_context": {"return_url": success_url, "cancel_url": cancel_url},

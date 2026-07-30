@@ -1,6 +1,6 @@
 export type Lang = "en" | "bn";
 
-export const LANG_COOKIE = "raipor_lang";
+export const LANG_COOKIE = "raipur_lang";
 export const DEFAULT_LANG: Lang = "en";
 export const LANGUAGES: { code: Lang; label: string; nativeLabel: string }[] = [
   { code: "en", label: "English", nativeLabel: "English" },

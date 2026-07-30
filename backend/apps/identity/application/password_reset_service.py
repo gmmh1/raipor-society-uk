@@ -27,7 +27,7 @@ def request_password_reset(*, email: str) -> None:
     enqueue_notification(
         recipient=user,
         channel=CHANNEL_EMAIL,
-        subject="Reset your Raipor Society UK password",
+        subject="Reset your Raipur Society UK password",
         body=f"Reset your password by visiting: {reset_link}",
         context={"user_id": str(user.id)},
     )

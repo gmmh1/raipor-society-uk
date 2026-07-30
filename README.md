@@ -1,6 +1,6 @@
-# Raipor Society UK Community Operating System
+# Raipur Society UK Community Operating System
 
-Production-ready, open-source monorepo scaffold for the Raipor Society UK digital ecosystem.
+Production-ready, open-source monorepo scaffold for the Raipur Society UK digital ecosystem.
 
 ## What this repository sets up
 
@@ -62,7 +62,7 @@ docker compose exec backend python manage.py createsuperuser
 ```bash
 git init
 git add .
-git commit -m "chore: bootstrap raipor community os"
+git commit -m "chore: bootstrap raipur community os"
 git branch -M main
 git remote add origin <your-github-repo-url>
 git push -u origin main

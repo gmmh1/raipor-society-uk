@@ -5,7 +5,7 @@ export default function App() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>Raipor Society UK</Text>
+        <Text style={styles.title}>Raipur Society UK</Text>
         <Text style={styles.subtitle}>Community Operating System</Text>
         <Text style={styles.caption}>
           Mobile shell is ready for module integration.

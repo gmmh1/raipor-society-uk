@@ -1,6 +1,6 @@
 # Infrastructure Continuation Plan for Social Organizations
 
-This document extends the original Raipor Society UK blueprint into a complete full-stack and operational model covering web, mobile, backend, deployment, and compliance.
+This document extends the original Raipur Society UK blueprint into a complete full-stack and operational model covering web, mobile, backend, deployment, and compliance.
 
 ## 1. Core Systems and Architectural Blueprint
 

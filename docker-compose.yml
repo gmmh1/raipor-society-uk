@@ -1,7 +1,7 @@
 services:
   traefik:
     image: traefik:v3.1
-    container_name: raipor-traefik
+    container_name: raipur-traefik
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -15,7 +15,7 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: raipor-postgres
+    container_name: raipur-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -32,13 +32,13 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: raipor-redis
+    container_name: raipur-redis
     ports:
       - "6379:6379"
 
   minio:
     image: minio/minio:latest
-    container_name: raipor-minio
+    container_name: raipur-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${S3_ACCESS_KEY}
@@ -51,7 +51,7 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: raipor-ollama
+    container_name: raipur-ollama
     ports:
       - "11434:11434"
     volumes:
@@ -61,7 +61,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: raipor-backend
+    container_name: raipur-backend
     env_file:
       - .env
     command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
@@ -82,7 +82,7 @@ services:
 
   web:
     image: node:20-alpine
-    container_name: raipor-web
+    container_name: raipur-web
     working_dir: /app
     command: sh -c "npm install --no-audit --no-fund && npm run dev -- --hostname 0.0.0.0 --port 3000"
     environment:
@@ -99,7 +99,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: raipor-celery-worker
+    container_name: raipur-celery-worker
     env_file:
       - .env
     command: celery -A config worker -l info
@@ -113,7 +113,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: raipor-celery-beat
+    container_name: raipur-celery-beat
     env_file:
       - .env
     command: celery -A config beat -l info
@@ -125,7 +125,7 @@ services:
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: raipor-prometheus
+    container_name: raipur-prometheus
     volumes:
       - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     ports:
@@ -133,7 +133,7 @@ services:
 
   loki:
     image: grafana/loki:latest
-    container_name: raipor-loki
+    container_name: raipur-loki
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./infra/loki/local-config.yaml:/etc/loki/local-config.yaml:ro
@@ -142,7 +142,7 @@ services:
 
   grafana:
     image: grafana/grafana:latest
-    container_name: raipor-grafana
+    container_name: raipur-grafana
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}

@@ -16,13 +16,13 @@ jobs:
       postgres:
         image: pgvector/pgvector:pg16
         env:
-          POSTGRES_DB: raipor
-          POSTGRES_USER: raipor
-          POSTGRES_PASSWORD: raipor
+          POSTGRES_DB: raipur
+          POSTGRES_USER: raipur
+          POSTGRES_PASSWORD: raipur
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U raipor -d raipor"
+          --health-cmd "pg_isready -U raipur -d raipur"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -31,7 +31,7 @@ jobs:
         ports:
           - 6379:6379
     env:
-      DATABASE_URL: postgresql://raipor:raipor@localhost:5432/raipor
+      DATABASE_URL: postgresql://raipur:raipur@localhost:5432/raipur
       SECRET_KEY: test-secret-key
       DEBUG: false
       ALLOWED_HOSTS: localhost,127.0.0.1

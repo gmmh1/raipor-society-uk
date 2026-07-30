@@ -54,7 +54,7 @@ def register_user(
     enqueue_notification(
         recipient=user,
         channel=CHANNEL_EMAIL,
-        subject="Verify your Raipor Society UK account",
+        subject="Verify your Raipur Society UK account",
         body=f"Welcome! Verify your email by visiting: {verify_link}",
         context={"user_id": str(user.id), "verification_token": token.token},
     )

@@ -90,7 +90,7 @@ export function RegisterForm({ lang }: { lang: Lang }) {
           <span className="brand-mark" aria-hidden="true">
             R
           </span>
-          Raipor Society UK
+          Raipur Society UK
         </Link>
         <h1 style={{ fontSize: "1.9rem", marginTop: 22 }}>{t("register.title")}</h1>
         <p style={{ marginTop: 6 }}>{t("register.subtitle")}</p>

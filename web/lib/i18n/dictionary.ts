@@ -32,7 +32,7 @@ const en = {
   "home.heroTitleEm": "progress",
   "home.heroTitlePost": "— together.",
   "home.heroBody":
-    "Raipor Society UK brings people together through events, learning, and collaboration — celebrating our diversity while building strong bonds, encouraging personal growth, and working toward a better future for the whole community.",
+    "Raipur Society UK brings people together through events, learning, and collaboration — celebrating our diversity while building strong bonds, encouraging personal growth, and working toward a better future for the whole community.",
   "home.joinCta": "Join the community",
   "home.programsCta": "See our programs",
   "home.pillarsEyebrow": "What we stand for",
@@ -76,7 +76,7 @@ const en = {
   "about.eyebrow": "About us",
   "about.title": "A community, established for the long run.",
   "about.lede":
-    "Raipor Society UK is a community organisation bringing people together through events, learning, and collaboration — celebrating our diversity while building strong bonds and encouraging personal growth and collective development for a better future. Always forward, together.",
+    "Raipur Society UK is a community organisation bringing people together through events, learning, and collaboration — celebrating our diversity while building strong bonds and encouraging personal growth and collective development for a better future. Always forward, together.",
   "about.workEyebrow": "How we work",
   "about.workTitle": "What guides the society day to day.",
   "about.value.open.title": "Open to everyone",
