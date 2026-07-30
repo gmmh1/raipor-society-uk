@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { VoteForm } from "@/components/member/VoteForm";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type Poll = {
   id: string;
@@ -13,12 +15,13 @@ type Poll = {
 };
 
 export default async function MemberVotingPage() {
-  const polls = await apiGet<Poll[]>("/voting/polls/");
+  const [polls, lang] = await Promise.all([apiGet<Poll[]>("/voting/polls/"), getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Voting</span>
-      <h1 style={{ marginTop: 10 }}>Polls and elections</h1>
+      <span className="eyebrow">{t("memberVoting.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberVoting.title")}</h1>
 
       <div className="grid grid-2" style={{ marginTop: 28 }}>
         {(polls ?? []).map((poll) => (
@@ -26,33 +29,31 @@ export default async function MemberVotingPage() {
             <span className={`status-pill status-${poll.status}`}>{poll.status}</span>
             {poll.position && (
               <span className="tag" style={{ marginLeft: 8 }}>
-                Electing: {poll.position}
+                {t("memberVoting.electing")}: {poll.position}
               </span>
             )}
             <h3 style={{ marginTop: 14 }}>{poll.title}</h3>
             {poll.description && <p style={{ marginTop: 8 }}>{poll.description}</p>}
 
             {poll.status === "open" && !poll.has_voted && (
-              <VoteForm pollId={poll.id} options={poll.options} />
+              <VoteForm pollId={poll.id} options={poll.options} lang={lang} />
             )}
             {poll.status === "open" && poll.has_voted && (
               <p style={{ marginTop: 16, color: "var(--success)", fontWeight: 700 }}>
-                ✓ Your vote has been recorded
+                {t("memberVoting.voteRecorded")}
               </p>
             )}
             {poll.status === "upcoming" && (
-              <p style={{ marginTop: 16, color: "var(--muted)" }}>Voting hasn't opened yet.</p>
+              <p style={{ marginTop: 16, color: "var(--muted)" }}>{t("memberVoting.notOpenYet")}</p>
             )}
             {poll.status === "closed" && (
-              <p style={{ marginTop: 16, color: "var(--muted)" }}>
-                This poll has closed. Results are available from the committee.
-              </p>
+              <p style={{ marginTop: 16, color: "var(--muted)" }}>{t("memberVoting.closedNotice")}</p>
             )}
           </article>
         ))}
         {!polls?.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
-            No polls published yet.
+            {t("memberVoting.noneYet")}
           </div>
         )}
       </div>

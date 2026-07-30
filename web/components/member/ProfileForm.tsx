@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 type Initial = {
   avatarUrl: string;
@@ -11,7 +13,16 @@ type Initial = {
   phoneNumber: string;
 };
 
-export function ProfileForm({ initial, position }: { initial: Initial; position: string }) {
+export function ProfileForm({
+  initial,
+  position,
+  lang,
+}: {
+  initial: Initial;
+  position: string;
+  lang: Lang;
+}) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [avatarUrl, setAvatarUrl] = useState(initial.avatarUrl);
   const [bio, setBio] = useState(initial.bio);
   const [publicConsent, setPublicConsent] = useState(initial.publicConsent);
@@ -36,7 +47,7 @@ export function ProfileForm({ initial, position }: { initial: Initial; position:
     });
 
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't save your profile.");
+      setError(result.data?.detail || t("memberProfile.saveError"));
       setLoading(false);
       return;
     }
@@ -53,10 +64,10 @@ export function ProfileForm({ initial, position }: { initial: Initial; position:
         </p>
       )}
 
-      <ImageUploadField label="Photo" value={avatarUrl} onChange={setAvatarUrl} />
+      <ImageUploadField label={t("memberProfile.photo")} value={avatarUrl} onChange={setAvatarUrl} />
 
       <div className="field">
-        <label>Phone number</label>
+        <label>{t("memberProfile.phoneNumber")}</label>
         <input
           className="input"
           value={phoneNumber}
@@ -65,7 +76,7 @@ export function ProfileForm({ initial, position }: { initial: Initial; position:
       </div>
 
       <div className="field">
-        <label>Short bio</label>
+        <label>{t("memberProfile.bio")}</label>
         <textarea className="textarea" value={bio} onChange={(event) => setBio(event.target.value)} />
       </div>
 
@@ -77,15 +88,14 @@ export function ProfileForm({ initial, position }: { initial: Initial; position:
           onChange={(event) => setPublicConsent(event.target.checked)}
         />
         <label htmlFor="public-consent" style={{ fontWeight: 400 }}>
-          Show my profile publicly on the About Us page (name, photo, bio, and the contact
-          details above)
+          {t("memberProfile.consentLabel")}
         </label>
       </div>
 
       {error && <p className="form-error">{error}</p>}
-      {saved && <p className="form-success">Saved.</p>}
+      {saved && <p className="form-success">{t("memberProfile.saved")}</p>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 18 }} disabled={loading}>
-        {loading ? "Saving…" : "Save"}
+        {loading ? t("memberProfile.saving") : t("memberProfile.save")}
       </button>
     </form>
   );

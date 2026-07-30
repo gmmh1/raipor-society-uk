@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { apiGet } from "@/lib/api";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type OrderItem = {
   id: string;
@@ -27,16 +29,21 @@ export default async function MyOrdersPage({
 }: {
   searchParams: Promise<{ paid?: string }>;
 }) {
-  const [orders, params] = await Promise.all([apiGet<Order[]>("/shop/orders/me/"), searchParams]);
+  const [orders, params, lang] = await Promise.all([
+    apiGet<Order[]>("/shop/orders/me/"),
+    searchParams,
+    getLang(),
+  ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Shop</span>
-      <h1 style={{ marginTop: 10 }}>Your orders</h1>
+      <span className="eyebrow">{t("memberOrders.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberOrders.title")}</h1>
 
       {params.paid && (
         <p className="form-success" style={{ marginTop: 14 }}>
-          Thanks — your payment is processing. Your order will update once it's confirmed.
+          {t("memberOrders.paidNotice")}
         </p>
       )}
 
@@ -46,7 +53,7 @@ export default async function MyOrdersPage({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span className={`status-pill status-${order.status}`}>{order.status}</span>
               <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>
-                {new Date(order.created_at).toLocaleDateString("en-GB")}
+                {new Date(order.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}
               </span>
             </div>
             <ul style={{ marginTop: 14, listStyle: "none", padding: 0, display: "grid", gap: 6 }}>
@@ -58,13 +65,13 @@ export default async function MyOrdersPage({
               ))}
             </ul>
             <p style={{ marginTop: 12, fontWeight: 700 }}>
-              Total: {money(order.total_minor, order.currency)}
+              {t("memberOrders.total")}: {money(order.total_minor, order.currency)}
             </p>
           </article>
         ))}
         {!orders?.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
-            No orders yet. <Link href="/shop">Visit the shop</Link>.
+            {t("memberOrders.noneYet")} <Link href="/shop">{t("memberOrders.visitShop")}</Link>.
           </div>
         )}
       </div>

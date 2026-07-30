@@ -2,6 +2,8 @@ import { apiGet } from "@/lib/api";
 import { CreateProductForm } from "@/components/admin/CreateProductForm";
 import { ProductDeactivateButton } from "@/components/admin/ProductDeactivateButton";
 import { OrderTransitionForm } from "@/components/admin/OrderTransitionForm";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type Product = {
   id: string;
@@ -30,15 +32,17 @@ function money(minor: number, currency: string) {
 }
 
 export default async function AdminShopPage() {
-  const [products, orders] = await Promise.all([
+  const [products, orders, lang] = await Promise.all([
     apiGet<Product[]>("/shop/products/"),
     apiGet<Paginated<Order>>("/shop/orders/admin/"),
+    getLang(),
   ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Shop</span>
-      <h1 style={{ marginTop: 10 }}>Shop administration</h1>
+      <span className="eyebrow">{t("adminShop.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("adminShop.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
         <CreateProductForm />
@@ -49,11 +53,11 @@ export default async function AdminShopPage() {
           <thead>
             <tr>
               <th></th>
-              <th>Product</th>
-              <th>SKU</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Sizes</th>
+              <th>{t("adminShop.colProduct")}</th>
+              <th>{t("adminShop.colSku")}</th>
+              <th>{t("adminShop.colPrice")}</th>
+              <th>{t("adminShop.colStock")}</th>
+              <th>{t("adminShop.colSizes")}</th>
               <th></th>
             </tr>
           </thead>
@@ -84,7 +88,7 @@ export default async function AdminShopPage() {
             {!products?.length && (
               <tr>
                 <td colSpan={6} style={{ color: "var(--muted)" }}>
-                  No active products.
+                  {t("adminShop.noProducts")}
                 </td>
               </tr>
             )}
@@ -92,23 +96,23 @@ export default async function AdminShopPage() {
         </table>
       </div>
 
-      <h2 style={{ marginTop: 40 }}>Orders</h2>
+      <h2 style={{ marginTop: 40 }}>{t("adminShop.orders")}</h2>
       <div className="card" style={{ marginTop: 20, overflowX: "auto" }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Total</th>
-              <th>Action</th>
+              <th>{t("adminShop.colMember")}</th>
+              <th>{t("adminCommon.date")}</th>
+              <th>{t("adminCommon.status")}</th>
+              <th>{t("adminShop.colTotal")}</th>
+              <th>{t("adminCommon.action")}</th>
             </tr>
           </thead>
           <tbody>
             {(orders?.results ?? []).map((order) => (
               <tr key={order.id}>
                 <td>{order.username}</td>
-                <td>{new Date(order.created_at).toLocaleDateString("en-GB")}</td>
+                <td>{new Date(order.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}</td>
                 <td>
                   <span className={`status-pill status-${order.status}`}>{order.status}</span>
                 </td>
@@ -121,7 +125,7 @@ export default async function AdminShopPage() {
             {!orders?.results?.length && (
               <tr>
                 <td colSpan={5} style={{ color: "var(--muted)" }}>
-                  No orders yet.
+                  {t("adminShop.noOrders")}
                 </td>
               </tr>
             )}

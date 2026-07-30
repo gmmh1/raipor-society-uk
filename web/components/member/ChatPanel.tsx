@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { callApi } from "@/lib/clientApi";
 import { VideoCallPanel } from "@/components/member/VideoCallPanel";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 type Channel = { id: string; name: string; channel_type: string };
 type Message = {
@@ -13,7 +15,8 @@ type Message = {
   is_flagged: boolean;
 };
 
-export function ChatPanel({ channels }: { channels: Channel[] }) {
+export function ChatPanel({ channels, lang }: { channels: Channel[]; lang: Lang }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [activeId, setActiveId] = useState<string | null>(channels[0]?.id ?? null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
@@ -77,14 +80,10 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
               fontWeight: 600,
             }}
           >
-            {channel.name || (channel.channel_type === "direct" ? "Direct message" : "Group")}
+            {channel.name || (channel.channel_type === "direct" ? t("memberChat.directMessage") : t("memberChat.group"))}
           </button>
         ))}
-        {!channels.length && (
-          <p style={{ padding: 18, color: "var(--muted)" }}>
-            No conversations yet. Staff can start one with you.
-          </p>
-        )}
+        {!channels.length && <p style={{ padding: 18, color: "var(--muted)" }}>{t("memberChat.noneYet")}</p>}
       </div>
 
       <div className="card" style={{ padding: 0, minHeight: 420, display: "flex", flexDirection: "column" }}>
@@ -98,12 +97,12 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
             }}
           >
             <button type="button" className="btn btn-ghost" onClick={() => setVideoOpen(true)}>
-              Start video call
+              {t("memberChat.startVideoCall")}
             </button>
           </div>
         )}
         {activeId && videoOpen && (
-          <VideoCallPanel channelId={activeId} onClose={() => setVideoOpen(false)} />
+          <VideoCallPanel channelId={activeId} onClose={() => setVideoOpen(false)} lang={lang} />
         )}
         <div style={{ flex: 1, padding: 20, display: "flex", flexDirection: "column", gap: 14 }}>
           {messages.map((message) => (
@@ -113,14 +112,12 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
               </span>
               <p style={{ marginTop: 2 }}>{message.content}</p>
               <span style={{ fontSize: "0.76rem", color: "var(--muted)" }}>
-                {new Date(message.created_at).toLocaleString("en-GB")}
+                {new Date(message.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-GB")}
               </span>
             </div>
           ))}
-          {!messages.length && activeId && (
-            <p style={{ color: "var(--muted)" }}>No messages yet — say hello.</p>
-          )}
-          {!activeId && <p style={{ color: "var(--muted)" }}>Select a conversation.</p>}
+          {!messages.length && activeId && <p style={{ color: "var(--muted)" }}>{t("memberChat.noMessages")}</p>}
+          {!activeId && <p style={{ color: "var(--muted)" }}>{t("memberChat.selectConversation")}</p>}
         </div>
 
         {activeId && (
@@ -131,12 +128,12 @@ export function ChatPanel({ channels }: { channels: Channel[] }) {
             <input
               className="input"
               style={{ marginTop: 0 }}
-              placeholder="Write a message…"
+              placeholder={t("memberChat.writeMessage")}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
             />
             <button type="submit" className="btn btn-primary" disabled={sending}>
-              Send
+              {t("memberChat.send")}
             </button>
           </form>
         )}

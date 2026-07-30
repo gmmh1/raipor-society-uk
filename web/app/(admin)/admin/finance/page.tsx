@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { RecordLedgerEntryForm } from "@/components/admin/RecordLedgerEntryForm";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type LedgerEntry = {
   id: string;
@@ -24,15 +26,17 @@ function money(minor: number, currency: string) {
 }
 
 export default async function AdminFinancePage() {
-  const [entries, reconciliation] = await Promise.all([
+  const [entries, reconciliation, lang] = await Promise.all([
     apiGet<LedgerEntry[]>("/finance/ledger/"),
     apiGet<Reconciliation>("/finance/reconciliation/summary/"),
+    getLang(),
   ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Finance</span>
-      <h1 style={{ marginTop: 10 }}>Ledger and reconciliation</h1>
+      <span className="eyebrow">{t("adminFinance.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("adminFinance.title")}</h1>
 
       {reconciliation && (
         <div
@@ -47,13 +51,13 @@ export default async function AdminFinancePage() {
               <span className="stat-value">
                 {money(reconciliation.payment_derived_ledger_credit_minor, reconciliation.currency)}
               </span>
-              <span className="stat-label">Ledger credit from payments</span>
+              <span className="stat-label">{t("adminFinance.ledgerCredit")}</span>
             </div>
             <div className="stat">
               <span className="stat-value">
                 {money(reconciliation.succeeded_payment_transactions_minor, reconciliation.currency)}
               </span>
-              <span className="stat-label">Succeeded payment transactions</span>
+              <span className="stat-label">{t("adminFinance.succeededPayments")}</span>
             </div>
             <div className="stat">
               <span
@@ -62,7 +66,7 @@ export default async function AdminFinancePage() {
               >
                 {money(reconciliation.variance_minor, reconciliation.currency)}
               </span>
-              <span className="stat-label">Variance</span>
+              <span className="stat-label">{t("adminFinance.variance")}</span>
             </div>
           </div>
         </div>
@@ -76,17 +80,17 @@ export default async function AdminFinancePage() {
         <table className="table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Type</th>
-              <th>Direction</th>
-              <th>Amount</th>
-              <th>Description</th>
+              <th>{t("adminCommon.date")}</th>
+              <th>{t("adminFinance.colType")}</th>
+              <th>{t("adminFinance.colDirection")}</th>
+              <th>{t("adminFinance.colAmount")}</th>
+              <th>{t("adminFinance.colDescription")}</th>
             </tr>
           </thead>
           <tbody>
             {(entries ?? []).slice(0, 50).map((entry) => (
               <tr key={entry.id}>
-                <td>{new Date(entry.created_at).toLocaleDateString("en-GB")}</td>
+                <td>{new Date(entry.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}</td>
                 <td>{entry.entry_type}</td>
                 <td style={{ textTransform: "capitalize" }}>{entry.direction}</td>
                 <td>{money(entry.amount_minor, entry.currency)}</td>
@@ -96,7 +100,7 @@ export default async function AdminFinancePage() {
             {!entries?.length && (
               <tr>
                 <td colSpan={5} style={{ color: "var(--muted)" }}>
-                  No ledger entries yet.
+                  {t("adminFinance.noneYet")}
                 </td>
               </tr>
             )}

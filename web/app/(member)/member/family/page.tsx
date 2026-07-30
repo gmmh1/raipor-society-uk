@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { ConsentGuardianButton } from "@/components/member/ConsentGuardianButton";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type CurrentUser = { id: string };
 
@@ -15,25 +17,27 @@ type Relationship = {
 };
 
 export default async function MyFamilyPage() {
-  const [user, relationships] = await Promise.all([
+  const [user, relationships, lang] = await Promise.all([
     apiGet<CurrentUser>("/identity/me/"),
     apiGet<Relationship[]>("/membership/guardians/me/"),
+    getLang(),
   ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Family</span>
-      <h1 style={{ marginTop: 10 }}>Guardian relationships</h1>
+      <span className="eyebrow">{t("memberFamily.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberFamily.title")}</h1>
       <p className="lede" style={{ marginTop: 10 }}>
-        Links between your account and any guardian or minor-member relationships on record.
+        {t("memberFamily.lede")}
       </p>
 
       <div className="grid grid-2" style={{ marginTop: 24 }}>
         {(relationships ?? []).map((rel) => {
           const isGuardian = user?.id === rel.guardian_id;
           const otherPartyLabel = isGuardian
-            ? `Child: ${rel.child_username}`
-            : `Guardian: ${rel.guardian_username}`;
+            ? `${t("memberFamily.child")}: ${rel.child_username}`
+            : `${t("memberFamily.guardian")}: ${rel.guardian_username}`;
           const needsMyConsent = isGuardian && !rel.consent_given_at;
 
           return (
@@ -42,12 +46,14 @@ export default async function MyFamilyPage() {
               <h3 style={{ marginTop: 14 }}>{otherPartyLabel}</h3>
               <p style={{ marginTop: 8, color: "var(--muted)" }}>
                 {rel.consent_given_at
-                  ? `Consent confirmed ${new Date(rel.consent_given_at).toLocaleDateString("en-GB")}`
-                  : "Awaiting guardian consent."}
+                  ? `${t("memberFamily.consentConfirmed")} ${new Date(rel.consent_given_at).toLocaleDateString(
+                      lang === "bn" ? "bn-BD" : "en-GB"
+                    )}`
+                  : t("memberFamily.awaitingConsent")}
               </p>
               {needsMyConsent && (
                 <div style={{ marginTop: 14 }}>
-                  <ConsentGuardianButton relationshipId={rel.id} />
+                  <ConsentGuardianButton relationshipId={rel.id} lang={lang} />
                 </div>
               )}
             </article>
@@ -55,7 +61,7 @@ export default async function MyFamilyPage() {
         })}
         {!relationships?.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
-            No guardian relationships on record.
+            {t("memberFamily.noneYet")}
           </div>
         )}
       </div>

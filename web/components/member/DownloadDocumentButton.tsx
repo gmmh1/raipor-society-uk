@@ -2,14 +2,19 @@
 
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 export function DownloadDocumentButton({
   documentId,
   versionId,
+  lang,
 }: {
   documentId: string;
   versionId: string;
+  lang: Lang;
 }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
 
   async function handleDownload() {
@@ -26,7 +31,7 @@ export function DownloadDocumentButton({
 
   return (
     <button type="button" className="btn btn-ghost" onClick={handleDownload} disabled={loading}>
-      {loading ? "Preparing…" : "Download"}
+      {loading ? t("memberReceipts.preparing") : t("memberDocuments.download")}
     </button>
   );
 }

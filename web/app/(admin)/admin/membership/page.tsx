@@ -3,6 +3,8 @@ import { MembershipTransitionForm } from "@/components/admin/MembershipTransitio
 import { LinkGuardianForm } from "@/components/admin/LinkGuardianForm";
 import { MessageMemberButton } from "@/components/admin/MessageMemberButton";
 import { SetPositionForm } from "@/components/admin/SetPositionForm";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type MembershipRow = {
   id: string;
@@ -28,14 +30,16 @@ export default async function AdminMembershipPage({
   if (params.q) query.set("q", params.q);
   if (params.status) query.set("status", params.status);
 
-  const page = await apiGet<Paginated<MembershipRow>>(
-    `/membership/admin/${query.toString() ? `?${query.toString()}` : ""}`
-  );
+  const [page, lang] = await Promise.all([
+    apiGet<Paginated<MembershipRow>>(`/membership/admin/${query.toString() ? `?${query.toString()}` : ""}`),
+    getLang(),
+  ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Membership</span>
-      <h1 style={{ marginTop: 10 }}>Membership administration</h1>
+      <span className="eyebrow">{t("adminMembership.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("adminMembership.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
         <LinkGuardianForm />
@@ -46,19 +50,19 @@ export default async function AdminMembershipPage({
           className="input"
           style={{ marginTop: 0, flex: 1, minWidth: 220 }}
           name="q"
-          placeholder="Search by name, username, or email"
+          placeholder={t("adminMembership.searchPlaceholder")}
           defaultValue={params.q}
         />
         <select className="select" style={{ marginTop: 0, width: 180 }} name="status" defaultValue={params.status ?? ""}>
-          <option value="">All statuses</option>
-          <option value="pending">Pending</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
-          <option value="expired">Expired</option>
-          <option value="cancelled">Cancelled</option>
+          <option value="">{t("adminMembership.allStatuses")}</option>
+          <option value="pending">{t("adminMembership.statusPending")}</option>
+          <option value="active">{t("adminMembership.statusActive")}</option>
+          <option value="suspended">{t("adminMembership.statusSuspended")}</option>
+          <option value="expired">{t("adminMembership.statusExpired")}</option>
+          <option value="cancelled">{t("adminMembership.statusCancelled")}</option>
         </select>
         <button type="submit" className="btn btn-ghost">
-          Filter
+          {t("adminMembership.filter")}
         </button>
       </form>
 
@@ -66,12 +70,12 @@ export default async function AdminMembershipPage({
         <table className="table">
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Status</th>
-              <th>Tier</th>
-              <th>Position</th>
-              <th>Expires</th>
-              <th>Action</th>
+              <th>{t("adminMembership.colMember")}</th>
+              <th>{t("adminCommon.status")}</th>
+              <th>{t("adminMembership.colTier")}</th>
+              <th>{t("adminMembership.colPosition")}</th>
+              <th>{t("adminMembership.colExpires")}</th>
+              <th>{t("adminCommon.action")}</th>
             </tr>
           </thead>
           <tbody>
@@ -81,7 +85,7 @@ export default async function AdminMembershipPage({
                   {member.username}
                   {member.is_minor && (
                     <span className="tag" style={{ marginLeft: 8 }}>
-                      Minor
+                      {t("adminMembership.minor")}
                     </span>
                   )}
                   <br />
@@ -96,7 +100,7 @@ export default async function AdminMembershipPage({
                 </td>
                 <td>
                   {member.expires_at
-                    ? new Date(member.expires_at).toLocaleDateString("en-GB")
+                    ? new Date(member.expires_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")
                     : "—"}
                 </td>
                 <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -108,14 +112,18 @@ export default async function AdminMembershipPage({
             {!page?.results?.length && (
               <tr>
                 <td colSpan={6} style={{ color: "var(--muted)" }}>
-                  No members match this filter.
+                  {t("adminMembership.noMatch")}
                 </td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-      {page && <p style={{ marginTop: 14, color: "var(--muted)" }}>{page.count} total members</p>}
+      {page && (
+        <p style={{ marginTop: 14, color: "var(--muted)" }}>
+          {page.count} {t("adminMembership.totalMembers")}
+        </p>
+      )}
     </div>
   );
 }

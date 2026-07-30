@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 declare global {
   interface Window {
@@ -23,7 +25,16 @@ const SCRIPT_ID = "jitsi-external-api-script";
  * channel-membership gate as the surrounding chat (you can only open the call
  * for a channel you're already a validated member of).
  */
-export function VideoCallPanel({ channelId, onClose }: { channelId: string; onClose: () => void }) {
+export function VideoCallPanel({
+  channelId,
+  onClose,
+  lang,
+}: {
+  channelId: string;
+  onClose: () => void;
+  lang: Lang;
+}) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -63,9 +74,9 @@ export function VideoCallPanel({ channelId, onClose }: { channelId: string; onCl
   return (
     <div style={{ padding: 16, borderBottom: "1px solid var(--line)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <strong style={{ fontSize: "0.9rem" }}>Video call</strong>
+        <strong style={{ fontSize: "0.9rem" }}>{t("memberChat.videoCall")}</strong>
         <button type="button" className="btn btn-ghost" onClick={onClose}>
-          End call
+          {t("memberChat.endCall")}
         </button>
       </div>
       <div ref={containerRef} style={{ height: 420, borderRadius: "var(--radius-sm)", overflow: "hidden" }} />

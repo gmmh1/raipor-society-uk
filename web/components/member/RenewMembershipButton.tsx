@@ -2,16 +2,21 @@
 
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 type CheckoutResult = { redirect_url: string };
 
 export function RenewMembershipButton({
   amountMinor,
   currency,
+  lang,
 }: {
   amountMinor: number;
   currency: string;
+  lang: Lang;
 }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +40,7 @@ export function RenewMembershipButton({
     );
 
     if (!result.ok || !result.data?.redirect_url) {
-      setError(result.data?.detail || "Couldn't start checkout. Please try again.");
+      setError(result.data?.detail || t("memberMembership.checkoutError"));
       setLoading(false);
       return;
     }
@@ -52,7 +57,7 @@ export function RenewMembershipButton({
           onClick={() => handleRenew("stripe")}
           disabled={loading}
         >
-          {loading ? "Redirecting…" : "Pay with card"}
+          {loading ? t("memberMembership.redirecting") : t("memberMembership.payWithCard")}
         </button>
         <button
           type="button"
@@ -60,7 +65,7 @@ export function RenewMembershipButton({
           onClick={() => handleRenew("paypal")}
           disabled={loading}
         >
-          Pay with PayPal
+          {t("memberMembership.payWithPaypal")}
         </button>
       </div>
       {error && <p className="form-error">{error}</p>}

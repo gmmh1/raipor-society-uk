@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { RegisterButton, CancelRegistrationButton } from "@/components/member/EventActionButton";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type EventItem = {
   id: string;
@@ -15,20 +17,22 @@ type Registration = {
   event: EventItem;
 };
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default async function MemberEventsPage() {
-  const [events, registrations] = await Promise.all([
+  const [events, registrations, lang] = await Promise.all([
     apiGet<EventItem[]>("/events/"),
     apiGet<Registration[]>("/events/registrations/me/"),
+    getLang(),
   ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+
+  function formatDate(value: string) {
+    return new Date(value).toLocaleString(lang === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
 
   const myByEvent = new Map(
     (registrations ?? []).map((registration) => [registration.event.id, registration])
@@ -40,8 +44,8 @@ export default async function MemberEventsPage() {
 
   return (
     <div>
-      <span className="eyebrow">Events</span>
-      <h1 style={{ marginTop: 10 }}>Upcoming events</h1>
+      <span className="eyebrow">{t("memberEvents.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberEvents.title")}</h1>
 
       <div className="grid grid-2" style={{ marginTop: 24 }}>
         {upcoming.map((event) => {
@@ -57,10 +61,10 @@ export default async function MemberEventsPage() {
                 {mine ? (
                   <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                     <span className={`status-pill status-${mine.status}`}>{mine.status}</span>
-                    <CancelRegistrationButton registrationId={mine.id} />
+                    <CancelRegistrationButton registrationId={mine.id} lang={lang} />
                   </div>
                 ) : (
-                  <RegisterButton eventId={event.id} />
+                  <RegisterButton eventId={event.id} lang={lang} />
                 )}
               </div>
             </article>
@@ -68,19 +72,19 @@ export default async function MemberEventsPage() {
         })}
         {!upcoming.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
-            No upcoming events published yet — check back soon.
+            {t("memberEvents.noneUpcoming")}
           </div>
         )}
       </div>
 
-      <h2 style={{ marginTop: 48 }}>Your history</h2>
+      <h2 style={{ marginTop: 48 }}>{t("memberEvents.history")}</h2>
       <div className="card" style={{ marginTop: 20, overflowX: "auto" }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Event</th>
-              <th>Date</th>
-              <th>Status</th>
+              <th>{t("memberEvents.colEvent")}</th>
+              <th>{t("adminCommon.date")}</th>
+              <th>{t("adminCommon.status")}</th>
             </tr>
           </thead>
           <tbody>
@@ -98,7 +102,7 @@ export default async function MemberEventsPage() {
             {!history.length && (
               <tr>
                 <td colSpan={3} style={{ color: "var(--muted)" }}>
-                  No past events yet.
+                  {t("memberEvents.noPast")}
                 </td>
               </tr>
             )}

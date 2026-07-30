@@ -3,9 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function ConsentGuardianButton({ relationshipId }: { relationshipId: string }) {
+export function ConsentGuardianButton({
+  relationshipId,
+  lang,
+}: {
+  relationshipId: string;
+  lang: Lang;
+}) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,7 +35,7 @@ export function ConsentGuardianButton({ relationshipId }: { relationshipId: stri
   return (
     <div>
       <button type="button" className="btn btn-primary" onClick={handleClick} disabled={loading}>
-        {loading ? "…" : "Confirm consent"}
+        {loading ? "…" : t("memberFamily.confirmConsent")}
       </button>
       {error && <p className="form-error">{error}</p>}
     </div>

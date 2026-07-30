@@ -2,8 +2,11 @@
 
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function DownloadReceiptButton({ receiptId }: { receiptId: string }) {
+export function DownloadReceiptButton({ receiptId, lang }: { receiptId: string; lang: Lang }) {
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
 
   async function handleDownload() {
@@ -19,7 +22,7 @@ export function DownloadReceiptButton({ receiptId }: { receiptId: string }) {
 
   return (
     <button type="button" className="btn btn-ghost" onClick={handleDownload} disabled={loading}>
-      {loading ? "Preparing…" : "Download PDF"}
+      {loading ? t("memberReceipts.preparing") : t("memberReceipts.downloadPdf")}
     </button>
   );
 }

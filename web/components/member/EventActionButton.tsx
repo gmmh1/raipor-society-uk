@@ -3,9 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
-export function RegisterButton({ eventId }: { eventId: string }) {
+export function RegisterButton({ eventId, lang }: { eventId: string; lang: Lang }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +19,7 @@ export function RegisterButton({ eventId }: { eventId: string }) {
       body: { event_id: eventId },
     });
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't register for this event.");
+      setError(result.data?.detail || t("memberActions.registerError"));
       setLoading(false);
       return;
     }
@@ -26,15 +29,22 @@ export function RegisterButton({ eventId }: { eventId: string }) {
   return (
     <div>
       <button type="button" className="btn btn-primary" onClick={handleRegister} disabled={loading}>
-        {loading ? "Registering…" : "Register"}
+        {loading ? t("memberActions.registering") : t("memberActions.register")}
       </button>
       {error && <p className="form-error">{error}</p>}
     </div>
   );
 }
 
-export function CancelRegistrationButton({ registrationId }: { registrationId: string }) {
+export function CancelRegistrationButton({
+  registrationId,
+  lang,
+}: {
+  registrationId: string;
+  lang: Lang;
+}) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [loading, setLoading] = useState(false);
 
   async function handleCancel() {
@@ -45,7 +55,7 @@ export function CancelRegistrationButton({ registrationId }: { registrationId: s
 
   return (
     <button type="button" className="btn btn-ghost" onClick={handleCancel} disabled={loading}>
-      {loading ? "Cancelling…" : "Cancel registration"}
+      {loading ? t("memberActions.cancelling") : t("memberActions.cancelRegistration")}
     </button>
   );
 }

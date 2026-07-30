@@ -1,6 +1,8 @@
 import { apiGet } from "@/lib/api";
 import { CreateEventForm } from "@/components/admin/CreateEventForm";
 import { EventCancelButton } from "@/components/admin/EventCancelButton";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type EventItem = {
   id: string;
@@ -12,41 +14,42 @@ type EventItem = {
   image_url: string;
 };
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default async function AdminEventsPage() {
-  const events = await apiGet<EventItem[]>("/events/");
+  const [events, lang] = await Promise.all([apiGet<EventItem[]>("/events/"), getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const sorted = [...(events ?? [])].sort(
     (a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
   );
 
+  function formatDate(value: string) {
+    return new Date(value).toLocaleString(lang === "bn" ? "bn-BD" : "en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  }
+
   return (
     <div>
-      <span className="eyebrow">Events</span>
-      <h1 style={{ marginTop: 10 }}>Events administration</h1>
+      <span className="eyebrow">{t("adminEvents.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("adminEvents.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
         <CreateEventForm />
       </div>
 
-      <h2 style={{ marginTop: 40 }}>Published events</h2>
+      <h2 style={{ marginTop: 40 }}>{t("adminEvents.publishedEvents")}</h2>
       <div className="card" style={{ marginTop: 20, overflowX: "auto" }}>
         <table className="table">
           <thead>
             <tr>
               <th></th>
-              <th>Title</th>
-              <th>Starts</th>
-              <th>Location</th>
-              <th>Capacity</th>
+              <th>{t("adminEvents.colTitle")}</th>
+              <th>{t("adminEvents.colStarts")}</th>
+              <th>{t("adminEvents.colLocation")}</th>
+              <th>{t("adminEvents.colCapacity")}</th>
               <th></th>
             </tr>
           </thead>
@@ -67,7 +70,7 @@ export default async function AdminEventsPage() {
                 <td>{event.title}</td>
                 <td>{formatDate(event.starts_at)}</td>
                 <td>{event.location || "—"}</td>
-                <td>{event.capacity > 0 ? event.capacity : "Unlimited"}</td>
+                <td>{event.capacity > 0 ? event.capacity : t("adminEvents.unlimited")}</td>
                 <td>
                   <EventCancelButton eventId={event.id} />
                 </td>
@@ -76,7 +79,7 @@ export default async function AdminEventsPage() {
             {!sorted.length && (
               <tr>
                 <td colSpan={6} style={{ color: "var(--muted)" }}>
-                  No published events yet.
+                  {t("adminEvents.noneYet")}
                 </td>
               </tr>
             )}

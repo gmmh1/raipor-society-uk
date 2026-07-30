@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { DownloadDocumentButton } from "@/components/member/DownloadDocumentButton";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type DocumentVersion = {
   id: string;
@@ -18,14 +20,15 @@ type DocumentItem = {
 };
 
 export default async function MemberDocumentsPage() {
-  const documents = await apiGet<DocumentItem[]>("/documents/");
+  const [documents, lang] = await Promise.all([apiGet<DocumentItem[]>("/documents/"), getLang()]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Documents</span>
-      <h1 style={{ marginTop: 10 }}>Society documents</h1>
+      <span className="eyebrow">{t("memberDocuments.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberDocuments.title")}</h1>
       <p className="lede" style={{ marginTop: 10 }}>
-        Policies, minutes, and forms shared with members.
+        {t("memberDocuments.lede")}
       </p>
 
       <div className="grid grid-2" style={{ marginTop: 28 }}>
@@ -38,10 +41,10 @@ export default async function MemberDocumentsPage() {
               {document.description && <p style={{ marginTop: 8 }}>{document.description}</p>}
               <div style={{ marginTop: 18 }}>
                 {latest ? (
-                  <DownloadDocumentButton documentId={document.id} versionId={latest.id} />
+                  <DownloadDocumentButton documentId={document.id} versionId={latest.id} lang={lang} />
                 ) : (
                   <span style={{ color: "var(--muted)", fontSize: "0.9rem" }}>
-                    No file uploaded yet.
+                    {t("memberDocuments.noFile")}
                   </span>
                 )}
               </div>
@@ -50,7 +53,7 @@ export default async function MemberDocumentsPage() {
         })}
         {!documents?.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
-            No documents shared with you yet.
+            {t("memberDocuments.noneYet")}
           </div>
         )}
       </div>

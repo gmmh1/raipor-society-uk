@@ -3,15 +3,20 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
+import { translate } from "@/lib/i18n/dictionary";
+import type { Lang } from "@/lib/i18n/config";
 
 export function VoteForm({
   pollId,
   options,
+  lang,
 }: {
   pollId: string;
   options: { id: string; text: string; image_url: string }[];
+  lang: Lang;
 }) {
   const router = useRouter();
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +30,7 @@ export function VoteForm({
       body: { option_id: selected },
     });
     if (!result.ok) {
-      setError(result.data?.detail || "Couldn't cast your vote.");
+      setError(result.data?.detail || t("memberVoting.castError"));
       setLoading(false);
       return;
     }
@@ -86,7 +91,7 @@ export function VoteForm({
         style={{ marginTop: 14 }}
         disabled={loading || !selected}
       >
-        {loading ? "Casting vote…" : "Cast vote"}
+        {loading ? t("memberVoting.castingVote") : t("memberVoting.castVote")}
       </button>
     </form>
   );

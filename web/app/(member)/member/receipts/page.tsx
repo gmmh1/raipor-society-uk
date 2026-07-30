@@ -1,5 +1,7 @@
 import { apiGet } from "@/lib/api";
 import { DownloadReceiptButton } from "@/components/member/DownloadReceiptButton";
+import { getLang } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dictionary";
 
 type Receipt = {
   id: string;
@@ -15,25 +17,29 @@ function money(minor: number, currency: string) {
 }
 
 export default async function MyReceiptsPage() {
-  const receipts = await apiGet<Receipt[]>("/finance/receipts/me/");
+  const [receipts, lang] = await Promise.all([
+    apiGet<Receipt[]>("/finance/receipts/me/"),
+    getLang(),
+  ]);
+  const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
 
   return (
     <div>
-      <span className="eyebrow">Finance</span>
-      <h1 style={{ marginTop: 10 }}>Your receipts</h1>
+      <span className="eyebrow">{t("memberReceipts.eyebrow")}</span>
+      <h1 style={{ marginTop: 10 }}>{t("memberReceipts.title")}</h1>
       <p className="lede" style={{ marginTop: 10 }}>
-        Official receipts issued for your donations and payments.
+        {t("memberReceipts.lede")}
       </p>
 
       <div className="card" style={{ marginTop: 24, overflowX: "auto" }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Receipt</th>
-              <th>Description</th>
-              <th>Amount</th>
-              <th>Date</th>
-              <th>Download</th>
+              <th>{t("memberReceipts.colReceipt")}</th>
+              <th>{t("memberReceipts.colDescription")}</th>
+              <th>{t("memberReceipts.colAmount")}</th>
+              <th>{t("memberReceipts.colDate")}</th>
+              <th>{t("memberReceipts.colDownload")}</th>
             </tr>
           </thead>
           <tbody>
@@ -42,16 +48,16 @@ export default async function MyReceiptsPage() {
                 <td>{receipt.receipt_number}</td>
                 <td>{receipt.description || "—"}</td>
                 <td>{money(receipt.amount_minor, receipt.currency)}</td>
-                <td>{new Date(receipt.created_at).toLocaleDateString("en-GB")}</td>
+                <td>{new Date(receipt.created_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}</td>
                 <td>
-                  <DownloadReceiptButton receiptId={receipt.id} />
+                  <DownloadReceiptButton receiptId={receipt.id} lang={lang} />
                 </td>
               </tr>
             ))}
             {!receipts?.length && (
               <tr>
                 <td colSpan={5} style={{ color: "var(--muted)" }}>
-                  No receipts issued yet.
+                  {t("memberReceipts.noneYet")}
                 </td>
               </tr>
             )}
