@@ -5,6 +5,7 @@ import { getLang } from "@/lib/i18n/server";
 const tabs = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/membership", label: "Membership" },
+  { href: "/admin/events", label: "Events" },
   { href: "/admin/shop", label: "Shop" },
   { href: "/admin/finance", label: "Finance" },
   { href: "/admin/governance", label: "Governance" },

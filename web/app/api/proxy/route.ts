@@ -8,6 +8,7 @@ import { apiGet, apiSend } from "@/lib/api";
  * keeps this from becoming an open proxy to arbitrary backend paths.
  */
 const ALLOWED = [
+  /^\/events\/$/,
   /^\/events\/register\/$/,
   /^\/events\/registrations\/[0-9a-f-]{36}\/cancel\/$/,
   /^\/events\/[0-9a-f-]{36}\/cancel\/$/,
