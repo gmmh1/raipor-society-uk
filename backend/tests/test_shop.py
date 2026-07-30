@@ -340,3 +340,111 @@ def test_admin_order_list_requires_role_and_returns_all_orders():
     filtered = client.get(reverse("shop-orders-admin-list"), {"status": "paid"})
     assert filtered.json()["count"] == 1
     assert filtered.json()["results"][0]["username"] == "shop-user-14"
+
+
+@pytest.mark.django_db
+def test_product_serializer_returns_image_and_sizes():
+    Product.objects.create(
+        name="Hoodie",
+        sku="SKU-HOODIE",
+        price_minor=2500,
+        inventory_count=10,
+        is_active=True,
+        image_url="https://example.com/hoodie.jpg",
+        available_sizes="S,M,L,XL",
+    )
+
+    client = APIClient()
+    response = client.get(reverse("shop-products-list-create"))
+
+    assert response.status_code == 200
+    body = response.json()[0]
+    assert body["image_url"] == "https://example.com/hoodie.jpg"
+    assert body["available_sizes"] == "S,M,L,XL"
+
+
+@pytest.mark.django_db
+def test_order_create_rejects_invalid_size():
+    user = User.objects.create_user(username="shop-user-size-1", password="pass123")
+    product = Product.objects.create(
+        name="Hoodie",
+        sku="SKU-HOODIE-2",
+        price_minor=2500,
+        inventory_count=10,
+        is_active=True,
+        available_sizes="S,M,L,XL",
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    missing_size = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 1}]},
+        format="json",
+    )
+    assert missing_size.status_code == 400
+    assert "valid size" in missing_size.json()["detail"].lower()
+
+    invalid_size = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 1, "size": "XXL"}]},
+        format="json",
+    )
+    assert invalid_size.status_code == 400
+
+
+@pytest.mark.django_db
+def test_order_create_accepts_valid_size_and_records_it():
+    user = User.objects.create_user(username="shop-user-size-2", password="pass123")
+    product = Product.objects.create(
+        name="Hoodie",
+        sku="SKU-HOODIE-3",
+        price_minor=2500,
+        inventory_count=10,
+        is_active=True,
+        available_sizes="S,M,L,XL",
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        reverse("shop-orders-create"),
+        data={"items": [{"product_id": str(product.id), "quantity": 1, "size": "M"}]},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.json()["items"][0]["size"] == "M"
+
+
+@pytest.mark.django_db
+def test_order_create_allows_two_sizes_of_same_product():
+    user = User.objects.create_user(username="shop-user-size-3", password="pass123")
+    product = Product.objects.create(
+        name="Hoodie",
+        sku="SKU-HOODIE-4",
+        price_minor=2500,
+        inventory_count=10,
+        is_active=True,
+        available_sizes="S,M,L,XL",
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=user)
+
+    response = client.post(
+        reverse("shop-orders-create"),
+        data={
+            "items": [
+                {"product_id": str(product.id), "quantity": 1, "size": "S"},
+                {"product_id": str(product.id), "quantity": 1, "size": "M"},
+            ]
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    sizes = {item["size"] for item in response.json()["items"]}
+    assert sizes == {"S", "M"}

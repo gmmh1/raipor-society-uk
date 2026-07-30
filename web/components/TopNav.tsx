@@ -16,6 +16,7 @@ export function TopNav({ lang }: { lang: Lang }) {
     { href: "/about", label: t("nav.about") },
     { href: "/programs", label: t("nav.programs") },
     { href: "/events", label: t("nav.events") },
+    { href: "/blog", label: t("nav.blog") },
     { href: "/shop", label: t("nav.shop") },
     { href: "/contact", label: t("nav.contact") },
   ];

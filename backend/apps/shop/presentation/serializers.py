@@ -16,6 +16,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "currency",
             "inventory_count",
             "is_active",
+            "image_url",
+            "available_sizes",
             "created_at",
             "updated_at",
         ]
@@ -24,6 +26,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class OrderItemRequestSerializer(serializers.Serializer):
     product_id = serializers.UUIDField()
     quantity = serializers.IntegerField(min_value=1)
+    size = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class OrderCreateSerializer(serializers.Serializer):
@@ -35,7 +38,7 @@ class ShopOrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShopOrderItem
-        fields = ["id", "product_id", "quantity", "unit_price_minor", "line_total_minor"]
+        fields = ["id", "product_id", "quantity", "size", "unit_price_minor", "line_total_minor"]
 
 
 class ShopOrderSerializer(serializers.ModelSerializer):

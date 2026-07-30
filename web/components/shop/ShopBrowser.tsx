@@ -12,10 +12,18 @@ type Product = {
   price_minor: number;
   currency: string;
   inventory_count: number;
+  image_url: string;
+  available_sizes: string;
 };
 
 function money(minor: number, currency: string) {
   return `${currency} ${(minor / 100).toFixed(2)}`;
+}
+
+function sizesOf(product: Product): string[] {
+  return product.available_sizes
+    ? product.available_sizes.split(",").map((size) => size.trim()).filter(Boolean)
+    : [];
 }
 
 export function ShopBrowser({ products }: { products: Product[] }) {
@@ -23,6 +31,7 @@ export function ShopBrowser({ products }: { products: Product[] }) {
   const { items, addItem, removeItem, clear, totalMinor } = useCart();
   const [checkingOut, setCheckingOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
 
   async function handleCheckout(provider: "stripe" | "paypal") {
     if (!items.length) return;
@@ -31,7 +40,11 @@ export function ShopBrowser({ products }: { products: Product[] }) {
 
     const orderResult = await callApi<{ id: string; detail?: string }>("/shop/orders/", {
       body: {
-        items: items.map((item) => ({ product_id: item.productId, quantity: item.quantity })),
+        items: items.map((item) => ({
+          product_id: item.productId,
+          quantity: item.quantity,
+          size: item.size ?? "",
+        })),
       },
     });
 
@@ -70,40 +83,82 @@ export function ShopBrowser({ products }: { products: Product[] }) {
   return (
     <div className="grid grid-2" style={{ marginTop: 28, alignItems: "start" }}>
       <div className="grid grid-2" style={{ gridColumn: "1 / -1" }}>
-        {products.map((product) => (
-          <article className="card" key={product.id}>
-            <h3>{product.name}</h3>
-            {product.description && <p style={{ marginTop: 8 }}>{product.description}</p>}
-            <div
-              style={{
-                marginTop: 16,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <strong>{money(product.price_minor, product.currency)}</strong>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                disabled={product.inventory_count < 1}
-                onClick={() =>
-                  addItem(
-                    {
-                      productId: product.id,
-                      name: product.name,
-                      priceMinor: product.price_minor,
-                      currency: product.currency,
-                    },
-                    1
-                  )
-                }
+        {products.map((product) => {
+          const sizes = sizesOf(product);
+          const selectedSize = selectedSizes[product.id] ?? sizes[0] ?? "";
+
+          return (
+            <article className="card" key={product.id}>
+              {product.image_url && (
+                <img
+                  src={product.image_url}
+                  alt={product.name}
+                  style={{
+                    width: "100%",
+                    aspectRatio: "4 / 3",
+                    objectFit: "cover",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: 14,
+                  }}
+                />
+              )}
+              <h3>{product.name}</h3>
+              {product.description && <p style={{ marginTop: 8 }}>{product.description}</p>}
+
+              {sizes.length > 0 && (
+                <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {sizes.map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{
+                        padding: "6px 14px",
+                        minHeight: "auto",
+                        fontSize: "0.85rem",
+                        background: size === selectedSize ? "var(--ink)" : undefined,
+                        color: size === selectedSize ? "var(--paper)" : undefined,
+                      }}
+                      onClick={() => setSelectedSizes((current) => ({ ...current, [product.id]: size }))}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div
+                style={{
+                  marginTop: 16,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
               >
-                {product.inventory_count < 1 ? "Out of stock" : "Add to cart"}
-              </button>
-            </div>
-          </article>
-        ))}
+                <strong>{money(product.price_minor, product.currency)}</strong>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  disabled={product.inventory_count < 1}
+                  onClick={() =>
+                    addItem(
+                      {
+                        productId: product.id,
+                        name: sizes.length ? `${product.name} (${selectedSize})` : product.name,
+                        priceMinor: product.price_minor,
+                        currency: product.currency,
+                        size: selectedSize,
+                      },
+                      1
+                    )
+                  }
+                >
+                  {product.inventory_count < 1 ? "Out of stock" : "Add to cart"}
+                </button>
+              </div>
+            </article>
+          );
+        })}
         {!products.length && (
           <div className="empty-state card" style={{ gridColumn: "1 / -1" }}>
             No products available right now.
@@ -118,7 +173,7 @@ export function ShopBrowser({ products }: { products: Product[] }) {
             <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 10 }}>
               {items.map((item) => (
                 <div
-                  key={item.productId}
+                  key={`${item.productId}-${item.size ?? ""}`}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
                 >
                   <span>
@@ -129,7 +184,7 @@ export function ShopBrowser({ products }: { products: Product[] }) {
                     <button
                       type="button"
                       className="btn btn-ghost"
-                      onClick={() => removeItem(item.productId)}
+                      onClick={() => removeItem(item.productId, item.size)}
                     >
                       Remove
                     </button>

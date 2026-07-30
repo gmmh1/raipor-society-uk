@@ -5,7 +5,16 @@ from apps.shop.models import Product, ShopOrder, ShopOrderItem
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "sku", "name", "price_minor", "currency", "inventory_count", "is_active")
+    list_display = (
+        "id",
+        "sku",
+        "name",
+        "price_minor",
+        "currency",
+        "inventory_count",
+        "available_sizes",
+        "is_active",
+    )
     list_filter = ("is_active", "currency")
     search_fields = ("sku", "name")
 

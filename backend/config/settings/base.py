@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.identity",
     "apps.membership",
     "apps.events",
+    "apps.blog",
     "apps.notifications",
     "apps.finance",
     "apps.shop",

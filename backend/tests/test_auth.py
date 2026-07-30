@@ -8,6 +8,8 @@ from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient
 
 from apps.identity.models import EmailVerificationToken, User
+from apps.membership.domain.status import STATUS_PENDING
+from apps.membership.models import Membership
 
 
 @pytest.fixture(autouse=True)
@@ -37,6 +39,12 @@ def test_register_verify_login_refresh_logout_flow():
     user = User.objects.get(username="newmember")
     assert user.is_active is False
     assert user.roles.filter(code="member").exists()
+
+    # Regression: self-registration must create a Membership row so the new
+    # member immediately shows up in the admin Membership list, which only
+    # ever queries Membership rows (not User rows).
+    membership = Membership.objects.get(user=user)
+    assert membership.status == STATUS_PENDING
 
     login_before_verify = client.post(
         reverse("auth-login"),

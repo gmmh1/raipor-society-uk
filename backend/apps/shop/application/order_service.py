@@ -31,6 +31,7 @@ def create_order_for_user(*, user, items: list[dict]) -> ShopOrder:
     for item in items:
         product_id = item["product_id"]
         quantity = int(item["quantity"])
+        size = (item.get("size") or "").strip()
         if quantity <= 0:
             raise ShopError("Quantity must be greater than zero.")
 
@@ -38,6 +39,10 @@ def create_order_for_user(*, user, items: list[dict]) -> ShopOrder:
             product = Product.objects.select_for_update().get(id=product_id, is_active=True)
         except Product.DoesNotExist as exc:
             raise ShopError("Product not found or inactive.") from exc
+
+        allowed_sizes = [s.strip() for s in product.available_sizes.split(",") if s.strip()]
+        if allowed_sizes and size not in allowed_sizes:
+            raise ShopError(f"Choose a valid size for {product.sku}: {', '.join(allowed_sizes)}.")
 
         if product.inventory_count < quantity:
             raise ShopError(f"Insufficient inventory for product {product.sku}.")
@@ -50,6 +55,7 @@ def create_order_for_user(*, user, items: list[dict]) -> ShopOrder:
             order=order,
             product=product,
             quantity=quantity,
+            size=size,
             unit_price_minor=product.price_minor,
             line_total_minor=line_total,
         )

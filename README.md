@@ -88,18 +88,21 @@ Follow [docs/EXECUTABLE_PLAN.md](docs/EXECUTABLE_PLAN.md) for full deliverables/
 | Module | Status |
 |---|---|
 | 1. Authentication + RBAC | Done — JWT login/refresh/logout, registration + email verification, password reset, rate limiting, audited role assignment (ADR 0002, 0008) |
-| 2. Membership | Done — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation, required DOB at registration, admin list/search with pagination and filtering (ADR 0009) |
-| 3. Events | Done — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) (ADR 0010) |
+| 2. Membership | Done — lifecycle/status transitions, guardian/consent safeguarding gate, dues/tiers, renewal automation, required DOB at registration, admin list/search with pagination and filtering (ADR 0009). Self-registration now creates a `Membership` row for the new user immediately (previously only created on first "My Membership" view, so newly registered members didn't show up in the admin Membership list until they logged in and visited it themselves); `backfill_memberships` management command exists for any accounts created before this fix. |
+| 3. Events | Done — registration, waitlisting, self-cancellation with promotion, QR-scan check-in, event cancellation (soft delete) (ADR 0010). Admin can create/list/cancel events from `/admin/events`; public `/events` page renders live upcoming events instead of a static placeholder. |
 | 4. Notifications | Done — email delivery real, Web Push (VAPID) and WhatsApp Business API adapters, retry/backoff with dead-letter status, deduplication keys, Celery beat schedule configured (ADR 0013) |
 | 5. Finance | Done — ledger, Stripe/PayPal webhook signature verification, outbound Stripe/PayPal checkout, PDF receipts (WeasyPrint), daily reconciliation-variance alerting (ADR 0014) |
-| 6. Shop | Done — catalog, inventory-aware orders, soft-deletable products, Shop↔Finance checkout linkage, stock-reservation timeout cancellation (ADR 0015) |
+| 6. Shop | Done — catalog, inventory-aware orders, soft-deletable products, Shop↔Finance checkout linkage, stock-reservation timeout cancellation (ADR 0015). Products support an optional `image_url` and a comma-separated `available_sizes` list (e.g. "S,M,L,XL"); inventory is still tracked per-product, not per-size. Order line items record the chosen size. |
 | 7. Documents | Done — upload/versioning with checksums, three-tier visibility access control, title/description/extracted-text search, MinIO storage abstraction, async PDF/OCR text extraction (ADR 0011) |
 | 8. AI Knowledge Assistant | Done — chunking, Ollama/BGE embeddings, pgvector storage, permission-scoped cosine retrieval, citation-first query endpoint, audit trail, re-index management command (ADR 0012); no ANN index or conversation memory yet |
 | 9. Chat | Done — real-time channels (Django Channels + channels_redis + daphne), JWT-authenticated WebSockets, direct/group channels, immutable messages with flag-based moderation, youth-safety rules restricting minors' direct messages and group membership to supervised contexts (ADR 0016) |
 | 10. Voting | Done — anonymous secret-ballot polls (participation and choice recorded in separate tables with no linking FK), database-level duplicate-vote prevention via a unique constraint + IntegrityError handling, quorum tracking, results hidden until close (ADR 0017) |
 | 11. Analytics | Done — staff-only governance/operations dashboard (`GET /api/analytics/overview/`), live ORM aggregation across all other modules with no separate reporting tables (ADR 0018) |
+| 12. Blog / News | Done — native Django app (`apps.blog`, not django-cms/djangocms-blog — see below), draft/publish workflow with slug auto-generation, soft-delete. Public `/blog` listing + `/blog/[slug]` detail pages; admin management at `/admin/blog` (create, publish/unpublish, delete). |
 
-Web (`web/app`) and mobile (`mobile/`) have no API integration yet regardless of backend module status.
+Web (`web/app`) now has real, API-backed Member and Admin portals (auth, live data, real actions) alongside the public marketing site. Mobile (`mobile/`) still has no API integration.
+
+**Why not djangocms-blog for the Blog/News module:** it requires `django-cms>=3.9,<4.0` plus `django-parler`, `django-filer`, `django-taggit`, and `djangocms-text-ckeditor` — an entire separate, server-rendered CMS framework with its own page tree and template placeholders, incompatible with this project's headless DRF API + Next.js/React Native frontend split. A native module (same Clean Architecture pattern as every other app here) gets the same outcome — an admin CMS for posts — without forking the architecture in two directions.
 
 ## Web deployment references
 

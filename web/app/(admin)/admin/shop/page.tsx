@@ -10,6 +10,8 @@ type Product = {
   price_minor: number;
   currency: string;
   inventory_count: number;
+  image_url: string;
+  available_sizes: string;
 };
 
 type Order = {
@@ -46,20 +48,34 @@ export default async function AdminShopPage() {
         <table className="table">
           <thead>
             <tr>
+              <th></th>
               <th>Product</th>
               <th>SKU</th>
               <th>Price</th>
               <th>Stock</th>
+              <th>Sizes</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {(products ?? []).map((product) => (
               <tr key={product.id}>
+                <td>
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt=""
+                      style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 8 }}
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>{product.name}</td>
                 <td>{product.sku}</td>
                 <td>{money(product.price_minor, product.currency)}</td>
                 <td>{product.inventory_count}</td>
+                <td>{product.available_sizes || "—"}</td>
                 <td>
                   <ProductDeactivateButton productId={product.id} />
                 </td>
@@ -67,7 +83,7 @@ export default async function AdminShopPage() {
             ))}
             {!products?.length && (
               <tr>
-                <td colSpan={5} style={{ color: "var(--muted)" }}>
+                <td colSpan={6} style={{ color: "var(--muted)" }}>
                   No active products.
                 </td>
               </tr>

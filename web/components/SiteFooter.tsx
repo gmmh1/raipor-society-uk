@@ -19,6 +19,7 @@ export function SiteFooter({ lang }: { lang: Lang }) {
             <Link href="/about">{t("footer.aboutLink")}</Link>
             <Link href="/programs">{t("nav.programs")}</Link>
             <Link href="/events">{t("nav.events")}</Link>
+            <Link href="/blog">{t("nav.blog")}</Link>
             <Link href="/donate">{t("nav.donate")}</Link>
           </div>
 

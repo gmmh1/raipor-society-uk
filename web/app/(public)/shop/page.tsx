@@ -9,6 +9,8 @@ type Product = {
   price_minor: number;
   currency: string;
   inventory_count: number;
+  image_url: string;
+  available_sizes: string;
 };
 
 async function getProducts(): Promise<Product[]> {

@@ -1,4 +1,7 @@
+from io import StringIO
+
 import pytest
+from django.core.management import call_command
 from django.urls import reverse
 from rest_framework.test import APIClient
 
@@ -148,3 +151,25 @@ def test_membership_admin_list_filters_by_status_and_search():
         reverse("membership-admin-list"), {"status": "not-a-real-status"}
     )
     assert unknown_status_response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_backfill_memberships_creates_missing_rows_only():
+    has_membership = User.objects.create_user(username="already-has-one", password="pass123")
+    Membership.objects.create(user=has_membership, status=STATUS_ACTIVE)
+
+    missing_a = User.objects.create_user(username="missing-membership-a", password="pass123")
+    missing_b = User.objects.create_user(username="missing-membership-b", password="pass123")
+
+    out = StringIO()
+    call_command("backfill_memberships", stdout=out)
+
+    assert "Created 2 missing membership record(s)." in out.getvalue()
+    assert Membership.objects.filter(user=missing_a).exists()
+    assert Membership.objects.filter(user=missing_b).exists()
+    assert Membership.objects.filter(user=has_membership).count() == 1
+
+    # Idempotent: running it again with nothing missing creates zero more.
+    out2 = StringIO()
+    call_command("backfill_memberships", stdout=out2)
+    assert "Created 0 missing membership record(s)." in out2.getvalue()

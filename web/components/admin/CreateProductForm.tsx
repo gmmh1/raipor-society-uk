@@ -11,6 +11,8 @@ export function CreateProductForm() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [inventory, setInventory] = useState("0");
+  const [imageUrl, setImageUrl] = useState("");
+  const [sizes, setSizes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,6 +34,8 @@ export function CreateProductForm() {
         price_minor: priceMinor,
         currency: "GBP",
         inventory_count: Number(inventory) || 0,
+        image_url: imageUrl,
+        available_sizes: sizes,
         is_active: true,
       },
     });
@@ -47,6 +51,8 @@ export function CreateProductForm() {
     setDescription("");
     setPrice("");
     setInventory("0");
+    setImageUrl("");
+    setSizes("");
     setLoading(false);
     router.refresh();
   }
@@ -83,6 +89,25 @@ export function CreateProductForm() {
             min="0"
             value={inventory}
             onChange={(event) => setInventory(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label>Image URL</label>
+          <input
+            className="input"
+            type="url"
+            placeholder="https://…"
+            value={imageUrl}
+            onChange={(event) => setImageUrl(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label>Sizes (comma-separated, optional)</label>
+          <input
+            className="input"
+            placeholder="S,M,L,XL"
+            value={sizes}
+            onChange={(event) => setSizes(event.target.value)}
           />
         </div>
       </div>

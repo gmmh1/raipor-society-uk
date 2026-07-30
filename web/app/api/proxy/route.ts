@@ -10,6 +10,9 @@ import { apiGet, apiSend } from "@/lib/api";
 const ALLOWED = [
   /^\/events\/$/,
   /^\/events\/register\/$/,
+  /^\/blog\/posts\/$/,
+  /^\/blog\/posts\/[0-9a-f-]{36}\/publish\/$/,
+  /^\/blog\/posts\/[0-9a-f-]{36}\/delete\/$/,
   /^\/events\/registrations\/[0-9a-f-]{36}\/cancel\/$/,
   /^\/events\/[0-9a-f-]{36}\/cancel\/$/,
   /^\/voting\/polls\/[0-9a-f-]{36}\/vote\/$/,

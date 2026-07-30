@@ -8,6 +8,7 @@ export type CartItem = {
   priceMinor: number;
   currency: string;
   quantity: number;
+  size?: string;
 };
 
 const STORAGE_KEY = "raipor_cart";
@@ -35,10 +36,12 @@ export function useCart() {
 
   const addItem = useCallback((product: Omit<CartItem, "quantity">, quantity: number) => {
     setItems((current) => {
-      const existing = current.find((item) => item.productId === product.productId);
+      const existing = current.find(
+        (item) => item.productId === product.productId && (item.size ?? "") === (product.size ?? "")
+      );
       const next = existing
         ? current.map((item) =>
-            item.productId === product.productId
+            item.productId === product.productId && (item.size ?? "") === (product.size ?? "")
               ? { ...item, quantity: item.quantity + quantity }
               : item
           )
@@ -48,9 +51,11 @@ export function useCart() {
     });
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
+  const removeItem = useCallback((productId: string, size?: string) => {
     setItems((current) => {
-      const next = current.filter((item) => item.productId !== productId);
+      const next = current.filter(
+        (item) => !(item.productId === productId && (item.size ?? "") === (size ?? ""))
+      );
       writeCart(next);
       return next;
     });

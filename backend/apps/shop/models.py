@@ -15,6 +15,10 @@ class Product(UUIDModel, TimeStampedModel, SoftDeleteModel):
     currency = models.CharField(max_length=8, default="GBP")
     inventory_count = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    image_url = models.URLField(blank=True)
+    # Comma-separated (e.g. "S,M,L,XL"). Blank means the product has no size
+    # choice. Inventory is tracked per-product, not per-size, for now.
+    available_sizes = models.CharField(max_length=255, blank=True)
 
     class Meta:
         db_table = "shop_product"
@@ -44,9 +48,12 @@ class ShopOrderItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
     unit_price_minor = models.BigIntegerField(default=0)
     line_total_minor = models.BigIntegerField(default=0)
+    size = models.CharField(max_length=32, blank=True)
 
     class Meta:
         db_table = "shop_order_item"
         constraints = [
-            models.UniqueConstraint(fields=["order", "product"], name="uniq_order_product_item"),
+            models.UniqueConstraint(
+                fields=["order", "product", "size"], name="uniq_order_product_size_item"
+            ),
         ]
