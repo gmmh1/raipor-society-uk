@@ -8,7 +8,7 @@ from apps.voting.models import Poll, PollOption
 class PollOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PollOption
-        fields = ["id", "text", "display_order"]
+        fields = ["id", "text", "image_url", "display_order"]
 
 
 class PollSerializer(serializers.ModelSerializer):
@@ -22,6 +22,7 @@ class PollSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+            "position",
             "visibility",
             "opens_at",
             "closes_at",
@@ -41,14 +42,20 @@ class PollSerializer(serializers.ModelSerializer):
         return has_user_voted(poll=obj, user=user)
 
 
+class PollOptionInputSerializer(serializers.Serializer):
+    text = serializers.CharField(max_length=255)
+    image_url = serializers.URLField(required=False, allow_blank=True, default="")
+
+
 class PollCreateSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255)
     description = serializers.CharField(required=False, allow_blank=True, default="")
+    position = serializers.CharField(max_length=128, required=False, allow_blank=True, default="")
     visibility = serializers.ChoiceField(choices=[choice[0] for choice in VISIBILITY_CHOICES])
     opens_at = serializers.DateTimeField()
     closes_at = serializers.DateTimeField()
     quorum = serializers.IntegerField(min_value=0, default=0)
-    options = serializers.ListField(child=serializers.CharField(max_length=255), min_length=2)
+    options = PollOptionInputSerializer(many=True, min_length=2)
 
 
 class CastVoteRequestSerializer(serializers.Serializer):

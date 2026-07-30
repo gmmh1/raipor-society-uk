@@ -4,6 +4,7 @@ from django.utils import timezone
 
 from apps.identity.application.rbac_service import user_has_any_role
 from apps.voting.domain.types import (
+    MIN_ELECTION_CANDIDATES,
     STAFF_ROLES,
     STATUS_CLOSED,
     STATUS_OPEN,
@@ -36,17 +37,28 @@ def create_poll(
     *,
     title: str,
     description: str,
-    options: list[str],
+    options: list[dict],
     opens_at,
     closes_at,
     quorum: int,
     visibility: str,
     creator,
+    position: str = "",
 ) -> Poll:
     if not title.strip():
         raise VotingError("Title is required.")
-    cleaned_options = [text.strip() for text in options if text.strip()]
-    if len(cleaned_options) < 2:
+    cleaned_options = [
+        {"text": option["text"].strip(), "image_url": option.get("image_url", "")}
+        for option in options
+        if option["text"].strip()
+    ]
+    position = position.strip()
+
+    if position and len(cleaned_options) < MIN_ELECTION_CANDIDATES:
+        raise VotingError(
+            f"A position election needs at least {MIN_ELECTION_CANDIDATES} candidates."
+        )
+    if not position and len(cleaned_options) < 2:
         raise VotingError("A poll needs at least two non-empty options.")
     if closes_at <= opens_at:
         raise VotingError("closes_at must be after opens_at.")
@@ -54,6 +66,7 @@ def create_poll(
     poll = Poll.objects.create(
         title=title.strip(),
         description=description,
+        position=position,
         visibility=visibility,
         opens_at=opens_at,
         closes_at=closes_at,
@@ -62,8 +75,13 @@ def create_poll(
     )
     PollOption.objects.bulk_create(
         [
-            PollOption(poll=poll, text=text, display_order=index)
-            for index, text in enumerate(cleaned_options)
+            PollOption(
+                poll=poll,
+                text=option["text"],
+                image_url=option["image_url"],
+                display_order=index,
+            )
+            for index, option in enumerate(cleaned_options)
         ]
     )
     return poll
@@ -123,7 +141,12 @@ def get_results(*, poll: Poll, user) -> dict:
         "quorum": poll.quorum,
         "quorum_met": ballot_count >= poll.quorum,
         "options": [
-            {"id": str(option.id), "text": option.text, "vote_count": option.vote_count}
+            {
+                "id": str(option.id),
+                "text": option.text,
+                "image_url": option.image_url,
+                "vote_count": option.vote_count,
+            }
             for option in tallies
         ],
     }

@@ -9,7 +9,7 @@ export function VoteForm({
   options,
 }: {
   pollId: string;
-  options: { id: string; text: string }[];
+  options: { id: string; text: string; image_url: string }[];
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState("");
@@ -38,7 +38,17 @@ export function VoteForm({
         {options.map((option) => (
           <label
             key={option.id}
-            style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 600 }}
+            className="card"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              border:
+                selected === option.id ? "1px solid var(--lime-deep)" : "1px solid var(--line)",
+            }}
           >
             <input
               type="radio"
@@ -47,6 +57,24 @@ export function VoteForm({
               checked={selected === option.id}
               onChange={() => setSelected(option.id)}
             />
+            {option.image_url ? (
+              <img
+                src={option.image_url}
+                alt=""
+                style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+              />
+            ) : (
+              <div
+                aria-hidden="true"
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: "var(--glass-bg-strong)",
+                  flexShrink: 0,
+                }}
+              />
+            )}
             {option.text}
           </label>
         ))}

@@ -5,10 +5,11 @@ type Poll = {
   id: string;
   title: string;
   description: string;
+  position: string;
   status: "upcoming" | "open" | "closed";
   has_voted: boolean;
   quorum: number;
-  options: { id: string; text: string }[];
+  options: { id: string; text: string; image_url: string }[];
 };
 
 export default async function MemberVotingPage() {
@@ -23,6 +24,11 @@ export default async function MemberVotingPage() {
         {(polls ?? []).map((poll) => (
           <article className="card" key={poll.id}>
             <span className={`status-pill status-${poll.status}`}>{poll.status}</span>
+            {poll.position && (
+              <span className="tag" style={{ marginLeft: 8 }}>
+                Electing: {poll.position}
+              </span>
+            )}
             <h3 style={{ marginTop: 14 }}>{poll.title}</h3>
             {poll.description && <p style={{ marginTop: 8 }}>{poll.description}</p>}
 

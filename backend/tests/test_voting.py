@@ -15,6 +15,10 @@ from apps.voting.application.poll_service import (
 from apps.voting.models import Poll, PollBallotReceipt, PollVote
 
 
+def _opts(*names):
+    return [{"text": name, "image_url": ""} for name in names]
+
+
 def _make_admin(username: str) -> User:
     user = User.objects.create_user(username=username, password="pass123")
     role, _ = Role.objects.get_or_create(code="admin", defaults={"name": "Admin"})
@@ -27,7 +31,7 @@ def _open_poll(*, creator, quorum: int = 0) -> Poll:
     return create_poll(
         title="Committee Election",
         description="Annual vote",
-        options=["Alice", "Bob"],
+        options=_opts("Alice", "Bob"),
         opens_at=now - timedelta(hours=1),
         closes_at=now + timedelta(hours=1),
         quorum=quorum,
@@ -41,7 +45,7 @@ def _closed_poll(*, creator, quorum: int = 0) -> Poll:
     return create_poll(
         title="Past Vote",
         description="",
-        options=["Yes", "No"],
+        options=_opts("Yes", "No"),
         opens_at=now - timedelta(days=2),
         closes_at=now - timedelta(days=1),
         quorum=quorum,
@@ -60,7 +64,7 @@ def test_create_poll_requires_at_least_two_options():
         create_poll(
             title="Bad Poll",
             description="",
-            options=["Only one"],
+            options=_opts("Only one"),
             opens_at=timezone.now(),
             closes_at=timezone.now() + timedelta(hours=1),
             quorum=0,
@@ -189,7 +193,7 @@ def test_poll_create_requires_staff_role():
             "opens_at": timezone.now().isoformat(),
             "closes_at": (timezone.now() + timedelta(hours=1)).isoformat(),
             "quorum": 0,
-            "options": ["A", "B"],
+            "options": [{"text": "A"}, {"text": "B"}],
         },
         format="json",
     )
@@ -205,7 +209,7 @@ def test_poll_create_requires_staff_role():
             "opens_at": timezone.now().isoformat(),
             "closes_at": (timezone.now() + timedelta(hours=1)).isoformat(),
             "quorum": 0,
-            "options": ["A", "B"],
+            "options": [{"text": "A"}, {"text": "B"}],
         },
         format="json",
     )
@@ -259,7 +263,7 @@ def test_poll_list_visibility_public_vs_member():
     public_poll = create_poll(
         title="Public Poll",
         description="",
-        options=["Yes", "No"],
+        options=_opts("Yes", "No"),
         opens_at=timezone.now() - timedelta(hours=1),
         closes_at=timezone.now() + timedelta(hours=1),
         quorum=0,
@@ -278,3 +282,82 @@ def test_poll_list_visibility_public_vs_member():
     member_response = member_client.get(reverse("voting-polls-list-create"))
     member_titles = {item["title"] for item in member_response.json()}
     assert member_titles == {public_poll.title, member_poll.title}
+
+
+@pytest.mark.django_db
+def test_position_election_requires_minimum_candidates():
+    admin = _make_admin("poll-admin-election-1")
+    now = timezone.now()
+
+    with pytest.raises(VotingError, match="at least 10 candidates"):
+        create_poll(
+            title="Chair Election",
+            description="",
+            position="Chair",
+            options=_opts(*[f"Candidate {i}" for i in range(9)]),
+            opens_at=now,
+            closes_at=now + timedelta(hours=1),
+            quorum=0,
+            visibility="member",
+            creator=admin,
+        )
+
+
+@pytest.mark.django_db
+def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
+    admin = _make_admin("poll-admin-election-2")
+    now = timezone.now()
+
+    options = [
+        {"text": f"Candidate {i}", "image_url": f"https://example.com/c{i}.jpg"} for i in range(10)
+    ]
+    poll = create_poll(
+        title="Secretary Election",
+        description="",
+        position="Secretary",
+        options=options,
+        opens_at=now,
+        closes_at=now + timedelta(hours=1),
+        quorum=0,
+        visibility="member",
+        creator=admin,
+    )
+
+    assert poll.position == "Secretary"
+    assert poll.options.count() == 10
+    assert poll.options.first().image_url == "https://example.com/c0.jpg"
+
+
+@pytest.mark.django_db
+def test_general_poll_still_allows_just_two_options():
+    admin = _make_admin("poll-admin-election-3")
+    poll = _open_poll(creator=admin)
+    assert poll.position == ""
+    assert poll.options.count() == 2
+
+
+@pytest.mark.django_db
+def test_poll_create_endpoint_enforces_election_minimum():
+    admin = _make_admin("poll-admin-election-4")
+    now = timezone.now()
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+
+    payload = {
+        "title": "Treasurer Election",
+        "position": "Treasurer",
+        "visibility": "member",
+        "opens_at": now.isoformat(),
+        "closes_at": (now + timedelta(hours=1)).isoformat(),
+        "quorum": 0,
+        "options": [{"text": f"Candidate {i}"} for i in range(5)],
+    }
+    too_few = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
+    assert too_few.status_code == 400
+
+    payload["options"] = [{"text": f"Candidate {i}", "image_url": ""} for i in range(10)]
+    enough = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
+    assert enough.status_code == 201
+    assert enough.json()["position"] == "Treasurer"
+    assert len(enough.json()["options"]) == 10

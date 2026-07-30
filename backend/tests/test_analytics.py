@@ -130,7 +130,7 @@ def test_voting_report_counts_open_polls_and_ballots():
     create_poll(
         title="Open Poll",
         description="",
-        options=["Yes", "No"],
+        options=[{"text": "Yes", "image_url": ""}, {"text": "No", "image_url": ""}],
         opens_at=now - timedelta(hours=1),
         closes_at=now + timedelta(hours=1),
         quorum=0,
@@ -140,7 +140,7 @@ def test_voting_report_counts_open_polls_and_ballots():
     create_poll(
         title="Closed Poll",
         description="",
-        options=["Yes", "No"],
+        options=[{"text": "Yes", "image_url": ""}, {"text": "No", "image_url": ""}],
         opens_at=now - timedelta(days=2),
         closes_at=now - timedelta(days=1),
         quorum=0,

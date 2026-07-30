@@ -8,6 +8,10 @@ from apps.voting.domain.types import VISIBILITY_CHOICES, VISIBILITY_MEMBER
 class Poll(UUIDModel, TimeStampedModel, SoftDeleteModel):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
+    # Blank = a general poll (min 2 options). Set (e.g. "Chair", "Secretary") =
+    # a committee-position election, which requires at least 10 candidates —
+    # see MIN_ELECTION_CANDIDATES in application/poll_service.py.
+    position = models.CharField(max_length=128, blank=True)
     visibility = models.CharField(
         max_length=16, choices=VISIBILITY_CHOICES, default=VISIBILITY_MEMBER
     )
@@ -36,6 +40,7 @@ class Poll(UUIDModel, TimeStampedModel, SoftDeleteModel):
 class PollOption(UUIDModel, TimeStampedModel):
     poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="options")
     text = models.CharField(max_length=255)
+    image_url = models.URLField(blank=True)
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:

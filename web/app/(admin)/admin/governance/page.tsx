@@ -4,6 +4,7 @@ import { CreatePollForm } from "@/components/admin/CreatePollForm";
 type Poll = {
   id: string;
   title: string;
+  position: string;
   status: "upcoming" | "open" | "closed";
   quorum: number;
 };
@@ -12,7 +13,7 @@ type Results = {
   ballot_count: number;
   quorum: number;
   quorum_met: boolean;
-  options: { text: string; vote_count: number }[];
+  options: { text: string; image_url: string; vote_count: number }[];
 };
 
 export default async function AdminGovernancePage() {
@@ -43,6 +44,11 @@ export default async function AdminGovernancePage() {
           return (
             <article className="card" key={poll.id}>
               <span className={`status-pill status-${poll.status}`}>{poll.status}</span>
+              {poll.position && (
+                <span className="tag" style={{ marginLeft: 8 }}>
+                  Electing: {poll.position}
+                </span>
+              )}
               <h3 style={{ marginTop: 14 }}>{poll.title}</h3>
               {results && (
                 <>
@@ -52,8 +58,20 @@ export default async function AdminGovernancePage() {
                   </p>
                   <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
                     {results.options.map((option) => (
-                      <div key={option.text} style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>{option.text}</span>
+                      <div
+                        key={option.text}
+                        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}
+                      >
+                        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {option.image_url && (
+                            <img
+                              src={option.image_url}
+                              alt=""
+                              style={{ width: 24, height: 24, borderRadius: "50%", objectFit: "cover" }}
+                            />
+                          )}
+                          {option.text}
+                        </span>
                         <strong>{option.vote_count}</strong>
                       </div>
                     ))}

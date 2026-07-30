@@ -10,7 +10,7 @@ class PollOptionInline(admin.TabularInline):
 
 @admin.register(Poll)
 class PollAdmin(admin.ModelAdmin):
-    list_display = ("title", "visibility", "opens_at", "closes_at", "quorum", "created_at")
+    list_display = ("title", "position", "visibility", "opens_at", "closes_at", "quorum", "created_at")
     list_filter = ("visibility",)
     search_fields = ("title",)
     inlines = [PollOptionInline]
