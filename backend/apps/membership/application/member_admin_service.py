@@ -109,9 +109,8 @@ def erase_member(*, user: User, actor: User) -> User:
     if profile is not None:
         profile.avatar_url = ""
         profile.bio = ""
-        profile.position = ""
         profile.public_consent = False
-        profile.save(update_fields=["avatar_url", "bio", "position", "public_consent", "updated_at"])
+        profile.save(update_fields=["avatar_url", "bio", "public_consent", "updated_at"])
 
     AuditLog.objects.create(
         actor=actor,

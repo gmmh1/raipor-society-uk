@@ -11,6 +11,15 @@ from apps.identity.models import User
 from apps.identity.permissions import HasAnyRole
 from apps.media.application.image_service import ImageError, upload_image
 from apps.media.presentation.serializers import ImageUploadSerializer
+from apps.membership.application.committee_service import (
+    CommitteeError,
+    create_committee,
+    current_committee,
+    get_committee_roster,
+    list_committees,
+    remove_committee_member,
+    set_committee_position,
+)
 from apps.membership.application.guardian_service import (
     GuardianRelationshipError,
     link_guardian,
@@ -29,20 +38,27 @@ from apps.membership.application.member_admin_service import (
     update_member_contact,
 )
 from apps.membership.application.profile_service import (
-    ProfileError,
     get_or_create_profile_for_user,
     set_avatar_url,
-    set_position,
     update_own_profile,
 )
 from apps.membership.application.tier_service import TierError, assign_tier, record_dues_payment
 from apps.membership.domain.status import STATUS_CHOICES
-from apps.membership.models import GuardianRelationship, MemberProfile, Membership, MembershipTier
+from apps.membership.models import (
+    Committee,
+    GuardianRelationship,
+    MemberProfile,
+    Membership,
+    MembershipTier,
+)
 from apps.membership.presentation.serializers import (
     AdminCreateMemberRequestSerializer,
     AdminEraseMemberRequestSerializer,
     AdminSetActiveRequestSerializer,
     AdminUpdateContactRequestSerializer,
+    CommitteeCreateRequestSerializer,
+    CommitteeMemberSerializer,
+    CommitteeSerializer,
     DuesRecordRequestSerializer,
     GuardianConsentRequestSerializer,
     GuardianLinkRequestSerializer,
@@ -54,7 +70,7 @@ from apps.membership.presentation.serializers import (
     MyProfileSerializer,
     ProfileUpdateRequestSerializer,
     PublicProfileSerializer,
-    SetPositionRequestSerializer,
+    SetCommitteeMemberRequestSerializer,
     TierAssignmentRequestSerializer,
 )
 
@@ -345,12 +361,59 @@ class MyProfilePhotoView(APIView):
         return Response({"url": avatar_url}, status=status.HTTP_201_CREATED)
 
 
-class AdminSetPositionView(APIView):
-    permission_classes = [IsAuthenticated, HasAnyRole]
-    required_roles = ("admin",)
+class CommitteeListCreateView(APIView):
+    """Committee terms — e.g. "2024–2026 Committee". Listing is admin/volunteer
+    (management use); only admins can create a new term."""
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            self.required_roles = ("admin",)
+            return [IsAuthenticated(), HasAnyRole()]
+        self.required_roles = ("admin", "volunteer")
+        return [IsAuthenticated(), HasAnyRole()]
+
+    def get(self, request):
+        committees = list_committees()
+        current = current_committee()
+        context = {"current_committee_id": getattr(current, "id", None)}
+        return Response(CommitteeSerializer(committees, many=True, context=context).data)
 
     def post(self, request):
-        serializer = SetPositionRequestSerializer(data=request.data)
+        serializer = CommitteeCreateRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            committee = create_committee(creator=request.user, **serializer.validated_data)
+        except CommitteeError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(CommitteeSerializer(committee).data, status=status.HTTP_201_CREATED)
+
+
+class CommitteeMembersView(APIView):
+    """A specific committee's roster — full roster (regardless of public_consent)
+    for admin/volunteer management; assigning a position is admin-only."""
+
+    def get_permissions(self):
+        self.required_roles = ("admin",) if self.request.method == "POST" else ("admin", "volunteer")
+        return [IsAuthenticated(), HasAnyRole()]
+
+    def get(self, _request, committee_id):
+        try:
+            committee = Committee.objects.get(id=committee_id)
+        except Committee.DoesNotExist:
+            return Response({"detail": "Committee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        roster = get_committee_roster(committee=committee)
+        return Response(CommitteeMemberSerializer(roster, many=True).data)
+
+    def post(self, request, committee_id):
+        try:
+            committee = Committee.objects.get(id=committee_id)
+        except Committee.DoesNotExist:
+            return Response({"detail": "Committee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = SetCommitteeMemberRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
@@ -358,17 +421,54 @@ class AdminSetPositionView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        profile = get_or_create_profile_for_user(target_user)
         try:
-            updated = set_position(
-                profile=profile,
-                position=serializer.validated_data["position"],
-                display_order=serializer.validated_data["display_order"],
+            membership = set_committee_position(
+                committee=committee, user=target_user, position=serializer.validated_data["position"]
             )
-        except ProfileError as exc:
+        except CommitteeError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(MyProfileSerializer(updated).data)
+        return Response(CommitteeMemberSerializer(membership).data, status=status.HTTP_201_CREATED)
+
+
+class CommitteeMemberRemoveView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, _request, committee_id, user_id):
+        try:
+            committee = Committee.objects.get(id=committee_id)
+        except Committee.DoesNotExist:
+            return Response({"detail": "Committee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            target_user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        remove_committee_member(committee=committee, user=target_user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class PublicCommitteeRosterView(APIView):
+    """A single committee's public roster by id — including past committees, so
+    they stay browsable from the timeline entry that references them."""
+
+    permission_classes = [AllowAny]
+
+    def get(self, _request, committee_id):
+        try:
+            committee = Committee.objects.get(id=committee_id)
+        except Committee.DoesNotExist:
+            return Response({"detail": "Committee not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        roster = get_committee_roster(committee=committee, public_only=True)
+        return Response(
+            {
+                "committee": CommitteeSerializer(committee).data,
+                "members": CommitteeMemberSerializer(roster, many=True).data,
+            }
+        )
 
 
 class AdminCreateMemberView(APIView):
@@ -476,19 +576,36 @@ class AdminEraseMemberView(APIView):
 
 
 class PublicRosterView(APIView):
-    """Committee + general member cards for the public About Us page — only
-    profiles the member themselves opted into (``public_consent``)."""
+    """Current-committee + general member cards for the public About Us page —
+    only profiles the member themselves opted into (``public_consent``). Past
+    committees aren't shown here — they're reached via their timeline entry (see
+    PublicCommitteeRosterView)."""
 
     permission_classes = [AllowAny]
 
     def get(self, _request):
+        committee = current_committee()
+        memberships_by_user_id = {}
+        if committee is not None:
+            memberships_by_user_id = {
+                membership.user_id: membership
+                for membership in get_committee_roster(committee=committee)
+            }
+
         consented = MemberProfile.objects.filter(public_consent=True).select_related("user")
-        committee = consented.exclude(position="").order_by("display_order", "user__first_name")
-        members = consented.filter(position="").order_by("user__first_name")
+        context = {"memberships_by_user_id": memberships_by_user_id}
+
+        committee_profiles = sorted(
+            (profile for profile in consented if profile.user_id in memberships_by_user_id),
+            key=lambda profile: memberships_by_user_id[profile.user_id].display_order,
+        )
+        member_profiles = [
+            profile for profile in consented if profile.user_id not in memberships_by_user_id
+        ]
 
         return Response(
             {
-                "committee": PublicProfileSerializer(committee, many=True).data,
-                "members": PublicProfileSerializer(members, many=True).data,
+                "committee": PublicProfileSerializer(committee_profiles, many=True, context=context).data,
+                "members": PublicProfileSerializer(member_profiles, many=True, context=context).data,
             }
         )

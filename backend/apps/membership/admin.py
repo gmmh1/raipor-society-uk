@@ -1,6 +1,8 @@
 from django.contrib import admin
 
 from apps.membership.models import (
+    Committee,
+    CommitteeMembership,
     GuardianRelationship,
     MemberProfile,
     Membership,
@@ -39,6 +41,19 @@ class GuardianRelationshipAdmin(admin.ModelAdmin):
 
 @admin.register(MemberProfile)
 class MemberProfileAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "position", "public_consent", "display_order")
+    list_display = ("id", "user", "public_consent")
     list_filter = ("public_consent",)
-    search_fields = ("user__username", "user__email", "position")
+    search_fields = ("user__username", "user__email")
+
+
+@admin.register(Committee)
+class CommitteeAdmin(admin.ModelAdmin):
+    list_display = ("name", "starts_at", "ends_at", "created_by")
+    search_fields = ("name",)
+
+
+@admin.register(CommitteeMembership)
+class CommitteeMembershipAdmin(admin.ModelAdmin):
+    list_display = ("committee", "user", "position", "display_order")
+    list_filter = ("position",)
+    search_fields = ("user__username", "user__email", "committee__name")

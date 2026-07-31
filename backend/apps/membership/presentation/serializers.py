@@ -1,8 +1,17 @@
 from rest_framework import serializers
 
+from apps.membership.application.committee_service import current_committee
 from apps.membership.domain.guardian import RELATIONSHIP_CHOICES
+from apps.membership.domain.position import COMMITTEE_POSITION_CHOICES
 from apps.membership.domain.status import STATUS_CHOICES
-from apps.membership.models import GuardianRelationship, MemberProfile, Membership, MembershipTier
+from apps.membership.models import (
+    Committee,
+    CommitteeMembership,
+    GuardianRelationship,
+    MemberProfile,
+    Membership,
+    MembershipTier,
+)
 
 
 class MembershipSerializer(serializers.ModelSerializer):
@@ -30,7 +39,6 @@ class MembershipAdminSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
     is_minor = serializers.BooleanField(source="user.is_minor", read_only=True)
     is_active = serializers.BooleanField(source="user.is_active", read_only=True)
-    position = serializers.SerializerMethodField()
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -46,16 +54,12 @@ class MembershipAdminSerializer(serializers.ModelSerializer):
             "is_active",
             "status",
             "tier",
-            "position",
             "started_at",
             "ended_at",
             "expires_at",
             "created_at",
             "updated_at",
         ]
-
-    def get_position(self, membership: Membership) -> str:
-        return getattr(getattr(membership.user, "profile", None), "position", "") or ""
 
     def get_avatar_url(self, membership: Membership) -> str:
         return getattr(getattr(membership.user, "profile", None), "avatar_url", "") or ""
@@ -125,10 +129,18 @@ class DuesRecordRequestSerializer(serializers.Serializer):
 
 class MyProfileSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+    position = serializers.SerializerMethodField()
 
     class Meta:
         model = MemberProfile
         fields = ["position", "avatar_url", "bio", "public_consent", "phone_number"]
+
+    def get_position(self, profile: MemberProfile) -> str:
+        committee = current_committee()
+        if committee is None:
+            return ""
+        membership = CommitteeMembership.objects.filter(committee=committee, user=profile.user).first()
+        return membership.position if membership else ""
 
 
 class ProfileUpdateRequestSerializer(serializers.Serializer):
@@ -138,10 +150,46 @@ class ProfileUpdateRequestSerializer(serializers.Serializer):
     phone_number = serializers.CharField(required=False, allow_blank=True, max_length=32, default="")
 
 
-class SetPositionRequestSerializer(serializers.Serializer):
+class CommitteeSerializer(serializers.ModelSerializer):
+    is_current = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Committee
+        fields = ["id", "name", "starts_at", "ends_at", "is_current", "created_at"]
+
+    def get_is_current(self, committee: Committee) -> bool:
+        current = self.context.get("current_committee_id")
+        if current is None:
+            current = getattr(current_committee(), "id", None)
+        return committee.id == current
+
+
+class CommitteeCreateRequestSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=255)
+    starts_at = serializers.DateField()
+    ends_at = serializers.DateField(required=False, allow_null=True, default=None)
+
+
+class CommitteeMemberSerializer(serializers.ModelSerializer):
+    user_id = serializers.UUIDField(source="user.id", read_only=True)
+    name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CommitteeMembership
+        fields = ["user_id", "name", "avatar_url", "position", "display_order"]
+
+    def get_name(self, membership: CommitteeMembership) -> str:
+        user = membership.user
+        return (f"{user.first_name} {user.last_name}".strip()) or user.username
+
+    def get_avatar_url(self, membership: CommitteeMembership) -> str:
+        return getattr(getattr(membership.user, "profile", None), "avatar_url", "") or ""
+
+
+class SetCommitteeMemberRequestSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
-    position = serializers.CharField(allow_blank=True, max_length=128)
-    display_order = serializers.IntegerField(required=False, default=0)
+    position = serializers.ChoiceField(choices=COMMITTEE_POSITION_CHOICES)
 
 
 class AdminCreateMemberRequestSerializer(serializers.Serializer):
@@ -186,14 +234,34 @@ class AdminEraseMemberRequestSerializer(serializers.Serializer):
 
 
 class PublicProfileSerializer(serializers.ModelSerializer):
+    """Used for both the current-committee roster and the plain-members list on
+    the public About Us page. ``position`` comes from ``context["memberships_by_user_id"]``
+    (a committee's CommitteeMembership rows keyed by user id) rather than the model
+    directly — a profile has no position of its own now, only within a committee."""
+
+    user_id = serializers.UUIDField(source="user.id", read_only=True)
     name = serializers.SerializerMethodField()
     email = serializers.EmailField(source="user.email", read_only=True)
     phone_number = serializers.CharField(source="user.phone_number", read_only=True)
+    position = serializers.SerializerMethodField()
+    display_order = serializers.SerializerMethodField()
 
     class Meta:
         model = MemberProfile
-        fields = ["name", "position", "avatar_url", "bio", "email", "phone_number"]
+        fields = ["user_id", "name", "position", "display_order", "avatar_url", "bio", "email", "phone_number"]
 
     def get_name(self, profile: MemberProfile) -> str:
         user = profile.user
         return (f"{user.first_name} {user.last_name}".strip()) or user.username
+
+    def get_position(self, profile: MemberProfile) -> str:
+        membership = self._membership_for(profile)
+        return membership.position if membership else ""
+
+    def get_display_order(self, profile: MemberProfile) -> int:
+        membership = self._membership_for(profile)
+        return membership.display_order if membership else 0
+
+    def _membership_for(self, profile: MemberProfile):
+        memberships_by_user_id = self.context.get("memberships_by_user_id", {})
+        return memberships_by_user_id.get(profile.user_id)

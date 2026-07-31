@@ -6,7 +6,6 @@ import { EditMemberContactForm } from "@/components/admin/EditMemberContactForm"
 import { ToggleActiveButton } from "@/components/admin/ToggleActiveButton";
 import { EraseMemberButton } from "@/components/admin/EraseMemberButton";
 import { MessageMemberButton } from "@/components/admin/MessageMemberButton";
-import { SetPositionForm } from "@/components/admin/SetPositionForm";
 import { getLang } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/dictionary";
 
@@ -21,7 +20,6 @@ type MembershipRow = {
   is_active: boolean;
   status: string;
   tier: string | null;
-  position: string;
   expires_at: string | null;
 };
 
@@ -86,7 +84,6 @@ export default async function AdminMembershipPage({
               <th>{t("memberProfile.phoneNumber")}</th>
               <th>{t("adminCommon.status")}</th>
               <th>{t("adminMembership.colTier")}</th>
-              <th>{t("adminMembership.colPosition")}</th>
               <th>{t("adminMembership.colExpires")}</th>
               <th>{t("adminCommon.action")}</th>
             </tr>
@@ -126,9 +123,6 @@ export default async function AdminMembershipPage({
                 </td>
                 <td>{member.tier ?? "—"}</td>
                 <td>
-                  <SetPositionForm userId={member.user_id} currentPosition={member.position} lang={lang} />
-                </td>
-                <td>
                   {member.expires_at
                     ? new Date(member.expires_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")
                     : "—"}
@@ -149,7 +143,7 @@ export default async function AdminMembershipPage({
             ))}
             {!page?.results?.length && (
               <tr>
-                <td colSpan={8} style={{ color: "var(--muted)" }}>
+                <td colSpan={7} style={{ color: "var(--muted)" }}>
                   {t("adminMembership.noMatch")}
                 </td>
               </tr>

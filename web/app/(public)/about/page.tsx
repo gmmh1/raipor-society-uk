@@ -1,12 +1,16 @@
+import Link from "next/link";
 import { getLang } from "@/lib/i18n/server";
 import { translate } from "@/lib/i18n/dictionary";
+import { CommitteeOrgChart } from "@/components/committee/CommitteeOrgChart";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api";
 const values = ["open", "member", "lasting"] as const;
 
 type ProfileCard = {
+  user_id: string;
   name: string;
   position: string;
+  display_order: number;
   avatar_url: string;
   bio: string;
   email: string;
@@ -20,7 +24,9 @@ type TimelineEntry = {
   title: string;
   description: string;
   entry_date: string;
+  end_date: string | null;
   image_url: string;
+  committee_id: string | null;
 };
 
 async function getRoster(): Promise<Roster> {
@@ -137,7 +143,9 @@ export default async function AboutPage() {
             <h2>{t("about.committeeTitle")}</h2>
           </div>
           {roster.committee.length ? (
-            <ProfileGrid profiles={roster.committee} />
+            <div className="card" style={{ padding: 32 }}>
+              <CommitteeOrgChart members={roster.committee} />
+            </div>
           ) : (
             <div className="empty-state card">{t("about.noCommittee")}</div>
           )}
@@ -184,9 +192,26 @@ export default async function AboutPage() {
                         month: "short",
                         year: "numeric",
                       })}
+                      {entry.end_date &&
+                        ` – ${new Date(entry.end_date).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}`}
                     </span>
-                    <h3 style={{ marginTop: 10 }}>{entry.title}</h3>
+                    <h3 style={{ marginTop: 10 }}>
+                      {entry.committee_id ? (
+                        <Link href={`/about/committee/${entry.committee_id}`}>{entry.title}</Link>
+                      ) : (
+                        entry.title
+                      )}
+                    </h3>
                     {entry.description && <p style={{ marginTop: 6 }}>{entry.description}</p>}
+                    {entry.committee_id && (
+                      <Link href={`/about/committee/${entry.committee_id}`} className="tag" style={{ marginTop: 8, display: "inline-block" }}>
+                        {t("about.viewCommittee")}
+                      </Link>
+                    )}
                   </div>
                 </article>
               ))}

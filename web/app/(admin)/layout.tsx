@@ -17,6 +17,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const tabs = [
     { href: "/admin/dashboard", label: t("portal.tab.dashboard") },
     { href: "/admin/membership", label: t("portal.tab.membership") },
+    { href: "/admin/committees", label: t("portal.tab.committees") },
     { href: "/admin/events", label: t("portal.tab.events") },
     { href: "/admin/blog", label: t("portal.tab.news") },
     { href: "/admin/timeline", label: t("portal.tab.timeline") },

@@ -39,6 +39,9 @@ export function TopNav({ lang }: { lang: Lang }) {
 
           <div className="nav-cta">
             <div className="nav-auth">
+              <Link href="/donate" className="btn" style={{ background: "var(--orange)", color: "#fff" }}>
+                {t("nav.donate")}
+              </Link>
               <ThemeToggle />
               <LanguageSwitcher lang={lang} />
               <Link href="/login" className="btn btn-ghost">

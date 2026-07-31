@@ -494,7 +494,6 @@ def test_admin_erase_member_scrubs_pii_but_keeps_related_records(monkeypatch):
         user=target,
         avatar_url="https://example.com/media/images/erase-me.jpg",
         bio="Loves gardening",
-        position="Secretary",
         public_consent=True,
     )
 
@@ -516,7 +515,6 @@ def test_admin_erase_member_scrubs_pii_but_keeps_related_records(monkeypatch):
     target.profile.refresh_from_db()
     assert target.profile.avatar_url == ""
     assert target.profile.bio == ""
-    assert target.profile.position == ""
     assert target.profile.public_consent is False
 
     # The membership row itself (financial/history record) must survive, still

@@ -1049,3 +1049,72 @@ a.card:hover {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* ---------- Committee org chart ---------- */
+
+.org-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  width: 100%;
+}
+
+.org-chart-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.org-chart-connector {
+  width: 2px;
+  height: 26px;
+  background: var(--orange-deep);
+  opacity: 0.45;
+}
+
+.org-chart-tier-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--orange-deep);
+  margin-bottom: 10px;
+}
+
+.org-chart-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.org-chart-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 150px;
+  padding: 16px 12px;
+}
+
+.org-chart-card img,
+.org-chart-card .avatar-placeholder {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.org-chart-card .avatar-placeholder {
+  background: var(--glass-bg-strong);
+}
+
+.org-chart-card h4 {
+  margin-top: 10px;
+  font-size: 0.92rem;
+  line-height: 1.3;
+}

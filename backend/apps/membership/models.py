@@ -1,8 +1,9 @@
 from django.conf import settings
 from django.db import models
 
-from apps.common.models import TimeStampedModel, UUIDModel
+from apps.common.models import SoftDeleteModel, TimeStampedModel, UUIDModel
 from apps.membership.domain.guardian import RELATIONSHIP_CHOICES
+from apps.membership.domain.position import COMMITTEE_POSITION_CHOICES
 from apps.membership.domain.status import STATUS_CHOICES, STATUS_PENDING
 
 
@@ -108,26 +109,83 @@ class MembershipStatusTransition(models.Model):
 
 class MemberProfile(UUIDModel, TimeStampedModel):
     """Public-facing profile info for the About Us page — separate from Membership
-    (billing/status lifecycle) and from User (auth). ``position`` is admin-set only
-    (a self-declared committee title would be a spoofing risk); everything else is
-    the member's own, opt-in choice via ``public_consent``."""
+    (billing/status lifecycle) and from User (auth). Committee position no longer
+    lives here — see ``Committee``/``CommitteeMembership`` — since a position is
+    scoped to a specific committee term, not a permanent attribute of a member.
+    Everything on this model is the member's own, opt-in choice via
+    ``public_consent``."""
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="profile",
     )
-    position = models.CharField(max_length=128, blank=True)
     avatar_url = models.URLField(blank=True)
     bio = models.TextField(blank=True)
     public_consent = models.BooleanField(default=False)
-    display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = "membership_member_profile"
         indexes = [
-            models.Index(fields=["public_consent", "position"]),
+            models.Index(fields=["public_consent"]),
         ]
 
     def __str__(self) -> str:
         return f"{self.user_id} profile"
+
+
+class Committee(UUIDModel, TimeStampedModel, SoftDeleteModel):
+    """A dated committee term (e.g. "2024–2026 Committee"). Exactly one committee
+    is "current" at a time — the one whose date range covers today (see
+    ``committee_service.current_committee``) — and once its ``ends_at`` passes, it
+    automatically becomes a past committee with no extra bookkeeping: "current" is
+    a live date comparison, not a flag admins have to remember to flip.
+    """
+
+    name = models.CharField(max_length=255)
+    starts_at = models.DateField()
+    ends_at = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="committees_created",
+    )
+
+    class Meta:
+        db_table = "membership_committee"
+        ordering = ("-starts_at",)
+        indexes = [
+            models.Index(fields=["starts_at", "ends_at"]),
+        ]
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class CommitteeMembership(UUIDModel, TimeStampedModel):
+    """One member's position within one committee term. A member can hold at most
+    one position per committee (unique_together below), but the same member can
+    appear across many committees over the years — that history is exactly what
+    makes past committees meaningful to browse from the timeline."""
+
+    committee = models.ForeignKey(Committee, on_delete=models.CASCADE, related_name="memberships")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="committee_memberships"
+    )
+    position = models.CharField(max_length=128, choices=[(name, name) for name in COMMITTEE_POSITION_CHOICES])
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "membership_committee_membership"
+        constraints = [
+            models.UniqueConstraint(fields=["committee", "user"], name="uniq_committee_member"),
+        ]
+        indexes = [
+            models.Index(fields=["committee", "display_order"]),
+        ]
+        ordering = ("display_order",)
+
+    def __str__(self) -> str:
+        return f"{self.user_id}: {self.position} ({self.committee_id})"
