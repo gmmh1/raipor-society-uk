@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.identity.models import Role, User
+from apps.membership.models import MemberProfile
 from apps.voting.application.poll_service import (
     VotingError,
     cast_vote,
@@ -24,6 +25,17 @@ def _make_admin(username: str) -> User:
     role, _ = Role.objects.get_or_create(code="admin", defaults={"name": "Admin"})
     user.roles.add(role)
     return user
+
+
+def _member_with_photo(username: str) -> User:
+    """Election candidates must be real members with a profile photo on file."""
+    user = User.objects.create_user(username=username, password="pass123")
+    MemberProfile.objects.create(user=user, avatar_url=f"https://example.com/{username}.jpg")
+    return user
+
+
+def _candidate_opts(*users):
+    return [{"candidate_user_id": str(user.id)} for user in users]
 
 
 def _open_poll(*, creator, quorum: int = 0) -> Poll:
@@ -288,13 +300,14 @@ def test_poll_list_visibility_public_vs_member():
 def test_position_election_rejects_more_than_ten_candidates():
     admin = _make_admin("poll-admin-election-1")
     now = timezone.now()
+    candidates = [_member_with_photo(f"candidate1-{i}") for i in range(11)]
 
     with pytest.raises(VotingError, match="at most 10 candidates"):
         create_poll(
             title="Chair Election",
             description="",
             position="Chair",
-            options=_opts(*[f"Candidate {i}" for i in range(11)]),
+            options=_candidate_opts(*candidates),
             opens_at=now,
             closes_at=now + timedelta(hours=1),
             quorum=0,
@@ -307,12 +320,13 @@ def test_position_election_rejects_more_than_ten_candidates():
 def test_position_election_allows_a_single_candidate():
     admin = _make_admin("poll-admin-election-2")
     now = timezone.now()
+    candidate = _member_with_photo("only-candidate")
 
     poll = create_poll(
         title="Uncontested Chair",
         description="",
         position="Chair",
-        options=_opts("Only Candidate"),
+        options=_candidate_opts(candidate),
         opens_at=now,
         closes_at=now + timedelta(hours=1),
         quorum=0,
@@ -322,21 +336,20 @@ def test_position_election_allows_a_single_candidate():
 
     assert poll.position == "Chair"
     assert poll.options.count() == 1
+    assert poll.options.first().candidate_id == candidate.id
 
 
 @pytest.mark.django_db
 def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
     admin = _make_admin("poll-admin-election-3")
     now = timezone.now()
+    candidates = [_member_with_photo(f"candidate3-{i}") for i in range(10)]
 
-    options = [
-        {"text": f"Candidate {i}", "image_url": f"https://example.com/c{i}.jpg"} for i in range(10)
-    ]
     poll = create_poll(
         title="Secretary Election",
         description="",
         position="Secretary",
-        options=options,
+        options=_candidate_opts(*candidates),
         opens_at=now,
         closes_at=now + timedelta(hours=1),
         quorum=0,
@@ -346,7 +359,69 @@ def test_position_election_succeeds_with_ten_candidates_and_keeps_images():
 
     assert poll.position == "Secretary"
     assert poll.options.count() == 10
-    assert poll.options.first().image_url == "https://example.com/c0.jpg"
+    first_option = poll.options.first()
+    assert first_option.candidate_id == candidates[0].id
+    assert first_option.image_url == candidates[0].profile.avatar_url
+    assert first_option.text == candidates[0].username
+
+
+@pytest.mark.django_db
+def test_position_election_requires_a_real_member_candidate():
+    admin = _make_admin("poll-admin-election-6")
+    now = timezone.now()
+
+    with pytest.raises(VotingError, match="members list"):
+        create_poll(
+            title="Chair Election",
+            description="",
+            position="Chair",
+            options=_opts("Just Some Text"),
+            opens_at=now,
+            closes_at=now + timedelta(hours=1),
+            quorum=0,
+            visibility="member",
+            creator=admin,
+        )
+
+
+@pytest.mark.django_db
+def test_position_election_rejects_candidate_without_a_photo():
+    admin = _make_admin("poll-admin-election-7")
+    now = timezone.now()
+    photoless = User.objects.create_user(username="no-photo-yet", password="pass123")
+
+    with pytest.raises(VotingError, match="no profile photo"):
+        create_poll(
+            title="Chair Election",
+            description="",
+            position="Chair",
+            options=_candidate_opts(photoless),
+            opens_at=now,
+            closes_at=now + timedelta(hours=1),
+            quorum=0,
+            visibility="member",
+            creator=admin,
+        )
+
+
+@pytest.mark.django_db
+def test_position_election_rejects_duplicate_candidate():
+    admin = _make_admin("poll-admin-election-8")
+    now = timezone.now()
+    candidate = _member_with_photo("double-runner")
+
+    with pytest.raises(VotingError, match="twice"):
+        create_poll(
+            title="Chair Election",
+            description="",
+            position="Chair",
+            options=_candidate_opts(candidate, candidate),
+            opens_at=now,
+            closes_at=now + timedelta(hours=1),
+            quorum=0,
+            visibility="member",
+            creator=admin,
+        )
 
 
 @pytest.mark.django_db
@@ -361,6 +436,7 @@ def test_general_poll_still_allows_just_two_options():
 def test_poll_create_endpoint_enforces_election_maximum():
     admin = _make_admin("poll-admin-election-5")
     now = timezone.now()
+    candidates = [_member_with_photo(f"candidate5-{i}") for i in range(11)]
 
     client = APIClient()
     client.force_authenticate(user=admin)
@@ -372,13 +448,39 @@ def test_poll_create_endpoint_enforces_election_maximum():
         "opens_at": now.isoformat(),
         "closes_at": (now + timedelta(hours=1)).isoformat(),
         "quorum": 0,
-        "options": [{"text": f"Candidate {i}"} for i in range(11)],
+        "options": _candidate_opts(*candidates),
     }
     too_many = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
     assert too_many.status_code == 400
 
-    payload["options"] = [{"text": f"Candidate {i}", "image_url": ""} for i in range(10)]
+    payload["options"] = _candidate_opts(*candidates[:10])
     ok = client.post(reverse("voting-polls-list-create"), data=payload, format="json")
     assert ok.status_code == 201
     assert ok.json()["position"] == "Treasurer"
     assert len(ok.json()["options"]) == 10
+
+
+@pytest.mark.django_db
+def test_poll_create_endpoint_allows_a_single_uncontested_candidate():
+    admin = _make_admin("poll-admin-election-9")
+    now = timezone.now()
+    candidate = _member_with_photo("uncontested-api")
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+
+    response = client.post(
+        reverse("voting-polls-list-create"),
+        data={
+            "title": "Uncontested Vice Chair",
+            "position": "Vice Chair",
+            "visibility": "member",
+            "opens_at": now.isoformat(),
+            "closes_at": (now + timedelta(hours=1)).isoformat(),
+            "quorum": 0,
+            "options": _candidate_opts(candidate),
+        },
+        format="json",
+    )
+    assert response.status_code == 201
+    assert len(response.json()["options"]) == 1

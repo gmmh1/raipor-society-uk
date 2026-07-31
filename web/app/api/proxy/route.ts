@@ -24,6 +24,10 @@ const ALLOWED = [
   /^\/membership\/transitions\/$/,
   /^\/membership\/tiers\/assign\/$/,
   /^\/membership\/dues\/record\/$/,
+  /^\/membership\/admin\/create\/$/,
+  /^\/membership\/admin\/contact\/$/,
+  /^\/membership\/admin\/active\/$/,
+  /^\/membership\/admin\/erase\/$/,
   /^\/identity\/roles\/assign\/$/,
   /^\/identity\/roles\/revoke\/$/,
   /^\/documents\/[0-9a-f-]{36}\/versions\/[0-9a-f-]{36}\/download\/$/,
@@ -44,6 +48,7 @@ const ALLOWED = [
   /^\/finance\/receipts\/[0-9a-f-]{36}\/download\/$/,
   /^\/membership\/profile\/me\/$/,
   /^\/membership\/profile\/position\/$/,
+  /^\/membership\/directory\/(\?.*)?$/,
   /^\/timeline\/entries\/$/,
   /^\/timeline\/entries\/[0-9a-f-]{36}\/delete\/$/,
 ];

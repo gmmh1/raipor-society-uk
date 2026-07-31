@@ -46,6 +46,7 @@ class RegisterRequestSerializer(serializers.Serializer):
     first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
     date_of_birth = serializers.DateField()
+    phone_number = serializers.CharField(max_length=32)
 
     def validate_password(self, value: str) -> str:
         validate_password(value)
@@ -54,6 +55,12 @@ class RegisterRequestSerializer(serializers.Serializer):
     def validate_date_of_birth(self, value):
         if value > timezone.localdate():
             raise serializers.ValidationError("Date of birth cannot be in the future.")
+        return value
+
+    def validate_phone_number(self, value: str) -> str:
+        digits = sum(character.isdigit() for character in value)
+        if digits < 7:
+            raise serializers.ValidationError("Enter a valid phone number.")
         return value
 
 

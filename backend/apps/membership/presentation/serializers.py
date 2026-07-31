@@ -27,8 +27,11 @@ class MembershipAdminSerializer(serializers.ModelSerializer):
     user_id = serializers.UUIDField(source="user.id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.EmailField(source="user.email", read_only=True)
+    phone_number = serializers.CharField(source="user.phone_number", read_only=True)
     is_minor = serializers.BooleanField(source="user.is_minor", read_only=True)
+    is_active = serializers.BooleanField(source="user.is_active", read_only=True)
     position = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Membership
@@ -37,7 +40,10 @@ class MembershipAdminSerializer(serializers.ModelSerializer):
             "user_id",
             "username",
             "email",
+            "phone_number",
+            "avatar_url",
             "is_minor",
+            "is_active",
             "status",
             "tier",
             "position",
@@ -50,6 +56,9 @@ class MembershipAdminSerializer(serializers.ModelSerializer):
 
     def get_position(self, membership: Membership) -> str:
         return getattr(getattr(membership.user, "profile", None), "position", "") or ""
+
+    def get_avatar_url(self, membership: Membership) -> str:
+        return getattr(getattr(membership.user, "profile", None), "avatar_url", "") or ""
 
 
 class MembershipTransitionSerializer(serializers.Serializer):
@@ -133,6 +142,47 @@ class SetPositionRequestSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
     position = serializers.CharField(allow_blank=True, max_length=128)
     display_order = serializers.IntegerField(required=False, default=0)
+
+
+class AdminCreateMemberRequestSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=150)
+    email = serializers.EmailField()
+    first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    date_of_birth = serializers.DateField()
+    phone_number = serializers.CharField(max_length=32)
+
+    def validate_phone_number(self, value: str) -> str:
+        digits = sum(character.isdigit() for character in value)
+        if digits < 7:
+            raise serializers.ValidationError("Enter a valid phone number.")
+        return value
+
+
+class AdminUpdateContactRequestSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
+    phone_number = serializers.CharField(required=False, max_length=32)
+    avatar_url = serializers.URLField(required=False)
+
+    def validate_phone_number(self, value: str) -> str:
+        digits = sum(character.isdigit() for character in value)
+        if digits < 7:
+            raise serializers.ValidationError("Enter a valid phone number.")
+        return value
+
+    def validate(self, attrs):
+        if not attrs:
+            raise serializers.ValidationError("Provide at least a phone number or a photo.")
+        return attrs
+
+
+class AdminSetActiveRequestSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
+    is_active = serializers.BooleanField()
+
+
+class AdminEraseMemberRequestSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
 
 
 class PublicProfileSerializer(serializers.ModelSerializer):

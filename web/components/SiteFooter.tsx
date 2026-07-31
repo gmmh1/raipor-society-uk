@@ -28,6 +28,11 @@ export function SiteFooter({ lang }: { lang: Lang }) {
             <Link href="/contact">{t("footer.contactUs")}</Link>
             <Link href="/member/dashboard">{t("nav.memberSignIn")}</Link>
           </div>
+
+          <div className="footer-links">
+            <h3>{t("footer.legal")}</h3>
+            <Link href="/privacy">{t("footer.privacyLink")}</Link>
+          </div>
         </div>
 
         <div className="footer-bottom">

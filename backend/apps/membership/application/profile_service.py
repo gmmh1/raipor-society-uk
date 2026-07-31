@@ -14,6 +14,14 @@ def get_or_create_profile_for_user(user) -> MemberProfile:
 
 
 @transaction.atomic
+def set_avatar_url(*, user, avatar_url: str) -> MemberProfile:
+    profile = get_or_create_profile_for_user(user)
+    profile.avatar_url = avatar_url
+    profile.save(update_fields=["avatar_url", "updated_at"])
+    return profile
+
+
+@transaction.atomic
 def update_own_profile(
     *, profile: MemberProfile, avatar_url: str, bio: str, public_consent: bool, phone_number: str
 ) -> MemberProfile:

@@ -1,7 +1,9 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 
 from apps.identity.application.password_reset_service import (
@@ -15,6 +17,7 @@ from apps.identity.application.registration_service import (
     register_user,
     verify_email,
 )
+from apps.media.application.image_service import ImageError, upload_image
 from apps.identity.application.role_assignment_service import (
     RoleAssignmentError,
     assign_role,
@@ -64,15 +67,37 @@ def role_check_view(request):
 
 
 class RegisterView(APIView):
+    """Photo is required alongside the rest of the join form, so this accepts
+    multipart (not JSON): the fields plus a ``photo`` file in one request."""
+
     permission_classes = [AllowAny]
     throttle_scope = "auth"
+    parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         serializer = RegisterRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        photo = request.FILES.get("photo")
+        if photo is None:
+            return Response(
+                {"photo": ["A profile photo is required."]}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
-            user = register_user(**serializer.validated_data)
+            filename = upload_image(
+                content_type=photo.content_type or "application/octet-stream",
+                data=photo.read(),
+            )
+        except ImageError as exc:
+            return Response({"photo": [str(exc)]}, status=status.HTTP_400_BAD_REQUEST)
+
+        avatar_url = request.build_absolute_uri(
+            reverse("media-image-serve", kwargs={"filename": filename})
+        )
+
+        try:
+            user = register_user(**serializer.validated_data, avatar_url=avatar_url)
         except RegistrationError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 

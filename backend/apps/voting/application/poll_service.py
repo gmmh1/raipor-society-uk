@@ -3,6 +3,7 @@ from django.db.models import Count, QuerySet
 from django.utils import timezone
 
 from apps.identity.application.rbac_service import user_has_any_role
+from apps.identity.models import User
 from apps.voting.domain.types import (
     MAX_ELECTION_CANDIDATES,
     STAFF_ROLES,
@@ -47,22 +48,24 @@ def create_poll(
 ) -> Poll:
     if not title.strip():
         raise VotingError("Title is required.")
-    cleaned_options = [
-        {"text": option["text"].strip(), "image_url": option.get("image_url", "")}
-        for option in options
-        if option["text"].strip()
-    ]
     position = position.strip()
 
     if position:
+        cleaned_options = _resolve_election_candidates(options)
         if len(cleaned_options) < 1:
             raise VotingError("A position election needs at least one candidate.")
         if len(cleaned_options) > MAX_ELECTION_CANDIDATES:
             raise VotingError(
                 f"A position election allows at most {MAX_ELECTION_CANDIDATES} candidates."
             )
-    elif len(cleaned_options) < 2:
-        raise VotingError("A poll needs at least two non-empty options.")
+    else:
+        cleaned_options = [
+            {"text": option["text"].strip(), "image_url": option.get("image_url", ""), "candidate": None}
+            for option in options
+            if option["text"].strip()
+        ]
+        if len(cleaned_options) < 2:
+            raise VotingError("A poll needs at least two non-empty options.")
     if closes_at <= opens_at:
         raise VotingError("closes_at must be after opens_at.")
 
@@ -82,12 +85,43 @@ def create_poll(
                 poll=poll,
                 text=option["text"],
                 image_url=option["image_url"],
+                candidate=option["candidate"],
                 display_order=index,
             )
             for index, option in enumerate(cleaned_options)
         ]
     )
     return poll
+
+
+def _resolve_election_candidates(options: list[dict]) -> list[dict]:
+    """Election candidates must be picked from the members list — name and photo
+    are derived here from each member's own profile, never trusted from the
+    client, so a candidate's photo always matches their real member record."""
+    candidate_ids = [option.get("candidate_user_id") for option in options]
+    if any(candidate_id is None for candidate_id in candidate_ids):
+        raise VotingError("Each election candidate must be selected from the members list.")
+    if len(set(candidate_ids)) != len(candidate_ids):
+        raise VotingError("The same member can't stand as a candidate twice in one election.")
+
+    candidates_by_id = {
+        str(user.id): user
+        for user in User.objects.filter(id__in=candidate_ids).select_related("profile")
+    }
+
+    resolved = []
+    for candidate_id in candidate_ids:
+        candidate = candidates_by_id.get(str(candidate_id))
+        if candidate is None:
+            raise VotingError("One of the selected candidates could not be found.")
+        avatar_url = getattr(getattr(candidate, "profile", None), "avatar_url", "") or ""
+        if not avatar_url:
+            raise VotingError(
+                f"{candidate.username} has no profile photo on file yet and can't stand as a candidate."
+            )
+        name = f"{candidate.first_name} {candidate.last_name}".strip() or candidate.username
+        resolved.append({"text": name, "image_url": avatar_url, "candidate": candidate})
+    return resolved
 
 
 def poll_status(poll: Poll) -> str:

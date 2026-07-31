@@ -1,15 +1,21 @@
 from django.urls import path
 
 from apps.membership.presentation.views import (
+    AdminCreateMemberView,
+    AdminEraseMemberView,
+    AdminSetMemberActiveView,
     AdminSetPositionView,
+    AdminUpdateMemberContactView,
     DuesRecordView,
     GuardianConsentView,
     GuardianLinkView,
+    MemberDirectoryView,
     MembershipAdminListView,
     MembershipTierListCreateView,
     MembershipTransitionView,
     MyGuardianRelationshipsView,
     MyMembershipView,
+    MyProfilePhotoView,
     MyProfileView,
     PublicRosterView,
     TierAssignmentView,
@@ -17,8 +23,26 @@ from apps.membership.presentation.views import (
 
 urlpatterns = [
     path("me/", MyMembershipView.as_view(), name="membership-me"),
+    path("directory/", MemberDirectoryView.as_view(), name="membership-directory"),
     path("admin/", MembershipAdminListView.as_view(), name="membership-admin-list"),
+    path("admin/create/", AdminCreateMemberView.as_view(), name="membership-admin-create"),
+    path(
+        "admin/contact/",
+        AdminUpdateMemberContactView.as_view(),
+        name="membership-admin-contact",
+    ),
+    path(
+        "admin/active/",
+        AdminSetMemberActiveView.as_view(),
+        name="membership-admin-active",
+    ),
+    path(
+        "admin/erase/",
+        AdminEraseMemberView.as_view(),
+        name="membership-admin-erase",
+    ),
     path("profile/me/", MyProfileView.as_view(), name="membership-profile-me"),
+    path("profile/photo/", MyProfilePhotoView.as_view(), name="membership-profile-photo"),
     path("profile/position/", AdminSetPositionView.as_view(), name="membership-profile-position"),
     path("profile/public/", PublicRosterView.as_view(), name="membership-profile-public"),
     path("transitions/", MembershipTransitionView.as_view(), name="membership-transition"),

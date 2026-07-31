@@ -1,6 +1,10 @@
 import { apiGet } from "@/lib/api";
 import { MembershipTransitionForm } from "@/components/admin/MembershipTransitionForm";
 import { LinkGuardianForm } from "@/components/admin/LinkGuardianForm";
+import { AddMemberForm } from "@/components/admin/AddMemberForm";
+import { EditMemberContactForm } from "@/components/admin/EditMemberContactForm";
+import { ToggleActiveButton } from "@/components/admin/ToggleActiveButton";
+import { EraseMemberButton } from "@/components/admin/EraseMemberButton";
 import { MessageMemberButton } from "@/components/admin/MessageMemberButton";
 import { SetPositionForm } from "@/components/admin/SetPositionForm";
 import { getLang } from "@/lib/i18n/server";
@@ -11,7 +15,10 @@ type MembershipRow = {
   user_id: string;
   username: string;
   email: string;
+  phone_number: string;
+  avatar_url: string;
   is_minor: boolean;
+  is_active: boolean;
   status: string;
   tier: string | null;
   position: string;
@@ -42,6 +49,10 @@ export default async function AdminMembershipPage({
       <h1 style={{ marginTop: 10 }}>{t("adminMembership.title")}</h1>
 
       <div style={{ marginTop: 24 }}>
+        <AddMemberForm lang={lang} />
+      </div>
+
+      <div style={{ marginTop: 24 }}>
         <LinkGuardianForm lang={lang} />
       </div>
 
@@ -70,7 +81,9 @@ export default async function AdminMembershipPage({
         <table className="table">
           <thead>
             <tr>
+              <th>{t("adminCommon.photo")}</th>
               <th>{t("adminMembership.colMember")}</th>
+              <th>{t("memberProfile.phoneNumber")}</th>
               <th>{t("adminCommon.status")}</th>
               <th>{t("adminMembership.colTier")}</th>
               <th>{t("adminMembership.colPosition")}</th>
@@ -80,7 +93,18 @@ export default async function AdminMembershipPage({
           </thead>
           <tbody>
             {(page?.results ?? []).map((member) => (
-              <tr key={member.id}>
+              <tr key={member.id} style={member.is_active ? undefined : { opacity: 0.6 }}>
+                <td>
+                  {member.avatar_url ? (
+                    <img
+                      src={member.avatar_url}
+                      alt=""
+                      style={{ width: 40, height: 40, borderRadius: "50%", objectFit: "cover" }}
+                    />
+                  ) : (
+                    "—"
+                  )}
+                </td>
                 <td>
                   {member.username}
                   {member.is_minor && (
@@ -88,9 +112,15 @@ export default async function AdminMembershipPage({
                       {t("adminMembership.minor")}
                     </span>
                   )}
+                  {!member.is_active && (
+                    <span className="tag" style={{ marginLeft: 8 }}>
+                      {t("adminCommon.deactivate")}
+                    </span>
+                  )}
                   <br />
                   <span style={{ color: "var(--muted)", fontSize: "0.85rem" }}>{member.email}</span>
                 </td>
+                <td>{member.phone_number || "—"}</td>
                 <td>
                   <span className={`status-pill status-${member.status}`}>{member.status}</span>
                 </td>
@@ -105,13 +135,21 @@ export default async function AdminMembershipPage({
                 </td>
                 <td style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   <MembershipTransitionForm membershipId={member.id} lang={lang} />
+                  <EditMemberContactForm
+                    userId={member.user_id}
+                    currentPhone={member.phone_number}
+                    currentAvatarUrl={member.avatar_url}
+                    lang={lang}
+                  />
                   <MessageMemberButton userId={member.user_id} lang={lang} />
+                  <ToggleActiveButton userId={member.user_id} isActive={member.is_active} lang={lang} />
+                  <EraseMemberButton userId={member.user_id} username={member.username} lang={lang} />
                 </td>
               </tr>
             ))}
             {!page?.results?.length && (
               <tr>
-                <td colSpan={6} style={{ color: "var(--muted)" }}>
+                <td colSpan={8} style={{ color: "var(--muted)" }}>
                   {t("adminMembership.noMatch")}
                 </td>
               </tr>

@@ -42,6 +42,18 @@ class PollOption(UUIDModel, TimeStampedModel):
     text = models.CharField(max_length=255)
     image_url = models.URLField(blank=True)
     display_order = models.PositiveIntegerField(default=0)
+    # Set only for election options (poll.position non-blank) — the member standing
+    # for the position. ``text``/``image_url`` are derived from this member's own
+    # profile at creation time (never trusted from the client), so the candidate
+    # photo always comes from the real members list. Null for general-poll options,
+    # which stay free text with no member link.
+    candidate = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="poll_candidacies",
+    )
 
     class Meta:
         db_table = "voting_poll_option"

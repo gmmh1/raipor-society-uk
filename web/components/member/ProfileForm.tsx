@@ -64,7 +64,13 @@ export function ProfileForm({
         </p>
       )}
 
-      <ImageUploadField label={t("memberProfile.photo")} value={avatarUrl} onChange={setAvatarUrl} lang={lang} />
+      <ImageUploadField
+        label={t("memberProfile.photo")}
+        value={avatarUrl}
+        onChange={setAvatarUrl}
+        lang={lang}
+        endpoint="/api/membership/profile/photo"
+      />
 
       <div className="field">
         <label>{t("memberProfile.phoneNumber")}</label>

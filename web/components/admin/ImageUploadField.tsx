@@ -9,11 +9,15 @@ export function ImageUploadField({
   value,
   onChange,
   lang = "en",
+  endpoint = "/api/media/upload",
 }: {
   label: string;
   value: string;
   onChange: (url: string) => void;
   lang?: Lang;
+  /** Upload proxy route. Defaults to the admin/volunteer-gated content image
+   * endpoint; pass "/api/membership/profile/photo" for member self-uploads. */
+  endpoint?: string;
 }) {
   const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +34,7 @@ export function ImageUploadField({
     const formData = new FormData();
     formData.set("file", file);
 
-    const res = await fetch("/api/media/upload", { method: "POST", body: formData });
+    const res = await fetch(endpoint, { method: "POST", body: formData });
     const data = (await res.json().catch(() => ({}))) as { url?: string; detail?: string };
 
     if (!res.ok || !data.url) {

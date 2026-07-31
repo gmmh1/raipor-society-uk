@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { callApi } from "@/lib/clientApi";
-import { ImageUploadField } from "@/components/admin/ImageUploadField";
+import { CandidatePicker, type Candidate } from "@/components/admin/CandidatePicker";
 import { translate } from "@/lib/i18n/dictionary";
 import type { Lang } from "@/lib/i18n/config";
 
@@ -22,6 +22,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
   const [description, setDescription] = useState("");
   const [position, setPosition] = useState("");
   const [options, setOptions] = useState<OptionInput[]>(emptyOptions(2));
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
   const [quorum, setQuorum] = useState("0");
@@ -44,19 +45,25 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    const cleanedOptions = options.filter((option) => option.text.trim());
+
+    let bodyOptions: Record<string, string>[];
     if (isElection) {
-      if (cleanedOptions.length < 1) {
+      if (candidates.length < 1) {
         setError(t("adminGovernance.oneCandidate"));
         return;
       }
-      if (cleanedOptions.length > MAX_ELECTION_CANDIDATES) {
+      if (candidates.length > MAX_ELECTION_CANDIDATES) {
         setError(t("adminGovernance.maxCandidates").replace("{max}", String(MAX_ELECTION_CANDIDATES)));
         return;
       }
-    } else if (cleanedOptions.length < 2) {
-      setError(t("adminGovernance.twoOptions"));
-      return;
+      bodyOptions = candidates.map((candidate) => ({ candidate_user_id: candidate.userId }));
+    } else {
+      const cleanedOptions = options.filter((option) => option.text.trim());
+      if (cleanedOptions.length < 2) {
+        setError(t("adminGovernance.twoOptions"));
+        return;
+      }
+      bodyOptions = cleanedOptions.map((option) => ({ text: option.text, image_url: option.imageUrl }));
     }
     if (!opensAt || !closesAt) {
       setError(t("adminGovernance.setTimes"));
@@ -70,7 +77,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
         title,
         description,
         position,
-        options: cleanedOptions.map((option) => ({ text: option.text, image_url: option.imageUrl })),
+        options: bodyOptions,
         opens_at: new Date(opensAt).toISOString(),
         closes_at: new Date(closesAt).toISOString(),
         quorum: Number(quorum) || 0,
@@ -88,6 +95,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
     setDescription("");
     setPosition("");
     setOptions(emptyOptions(2));
+    setCandidates([]);
     setOpensAt("");
     setClosesAt("");
     setQuorum("0");
@@ -125,57 +133,50 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
         )}
       </div>
 
-      <div className="field">
-        <label>{isElection ? t("adminGovernance.candidates") : t("adminGovernance.options")}</label>
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 16 }}>
-          {options.map((option, index) => (
-            <div
-              key={index}
-              className="card"
-              style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start" }}
-            >
-              <div style={{ flex: 1 }}>
-                <input
-                  className="input"
-                  style={{ marginTop: 0 }}
-                  placeholder={isElection ? t("adminGovernance.candidateName") : `${t("adminGovernance.optionN")} ${index + 1}`}
-                  value={option.text}
-                  onChange={(event) => updateOption(index, { text: event.target.value })}
-                />
-                {isElection && (
-                  <div style={{ marginTop: 10 }}>
-                    <ImageUploadField
-                      label={t("adminCommon.photo")}
-                      value={option.imageUrl}
-                      onChange={(url) => updateOption(index, { imageUrl: url })}
-                      lang={lang}
-                    />
-                  </div>
+      {isElection ? (
+        <CandidatePicker
+          selected={candidates}
+          onChange={setCandidates}
+          maxCandidates={MAX_ELECTION_CANDIDATES}
+          lang={lang}
+        />
+      ) : (
+        <div className="field">
+          <label>{t("adminGovernance.options")}</label>
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 16 }}>
+            {options.map((option, index) => (
+              <div
+                key={index}
+                className="card"
+                style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start" }}
+              >
+                <div style={{ flex: 1 }}>
+                  <input
+                    className="input"
+                    style={{ marginTop: 0 }}
+                    placeholder={`${t("adminGovernance.optionN")} ${index + 1}`}
+                    value={option.text}
+                    onChange={(event) => updateOption(index, { text: event.target.value })}
+                  />
+                </div>
+                {options.length > 2 && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => removeOption(index)}
+                    style={{ flexShrink: 0 }}
+                  >
+                    {t("adminCommon.remove")}
+                  </button>
                 )}
               </div>
-              {(isElection ? options.length > 1 : options.length > 2) && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => removeOption(index)}
-                  style={{ flexShrink: 0 }}
-                >
-                  {t("adminCommon.remove")}
-                </button>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
+          <button type="button" className="btn btn-ghost" style={{ marginTop: 12 }} onClick={addOption}>
+            {t("adminGovernance.addOption")}
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost"
-          style={{ marginTop: 12 }}
-          onClick={addOption}
-          disabled={isElection && options.length >= MAX_ELECTION_CANDIDATES}
-        >
-          {isElection ? t("adminGovernance.addCandidate") : t("adminGovernance.addOption")}
-        </button>
-      </div>
+      )}
 
       <div className="grid grid-2" style={{ marginTop: 0 }}>
         <div className="field">

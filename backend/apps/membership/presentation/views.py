@@ -1,12 +1,16 @@
 from django.db.models import Q
 from rest_framework import status
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 
 from apps.common.pagination import StandardResultsPagination
 from apps.identity.models import User
 from apps.identity.permissions import HasAnyRole
+from apps.media.application.image_service import ImageError, upload_image
+from apps.media.presentation.serializers import ImageUploadSerializer
 from apps.membership.application.guardian_service import (
     GuardianRelationshipError,
     link_guardian,
@@ -17,9 +21,17 @@ from apps.membership.application.lifecycle_service import (
     get_or_create_membership_for_user,
     transition_membership_status,
 )
+from apps.membership.application.member_admin_service import (
+    MemberAdminError,
+    create_member,
+    erase_member,
+    set_member_active,
+    update_member_contact,
+)
 from apps.membership.application.profile_service import (
     ProfileError,
     get_or_create_profile_for_user,
+    set_avatar_url,
     set_position,
     update_own_profile,
 )
@@ -27,6 +39,10 @@ from apps.membership.application.tier_service import TierError, assign_tier, rec
 from apps.membership.domain.status import STATUS_CHOICES
 from apps.membership.models import GuardianRelationship, MemberProfile, Membership, MembershipTier
 from apps.membership.presentation.serializers import (
+    AdminCreateMemberRequestSerializer,
+    AdminEraseMemberRequestSerializer,
+    AdminSetActiveRequestSerializer,
+    AdminUpdateContactRequestSerializer,
     DuesRecordRequestSerializer,
     GuardianConsentRequestSerializer,
     GuardianLinkRequestSerializer,
@@ -53,6 +69,37 @@ class MyMembershipView(APIView):
         return Response(MembershipSerializer(membership).data)
 
 
+class MemberDirectoryView(APIView):
+    """Minimal name+photo lookup for picking election candidates — narrower than
+    MembershipAdminListView (admin/treasurer-only, exposes status/billing data);
+    volunteers who can create polls but not manage membership need this too."""
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin", "volunteer")
+
+    def get(self, request):
+        query = request.query_params.get("q", "").strip()
+        queryset = User.objects.filter(is_active=True).select_related("profile")
+        if query:
+            queryset = queryset.filter(
+                Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(username__icontains=query)
+            )
+        queryset = queryset.order_by("first_name", "username")[:50]
+
+        results = [
+            {
+                "user_id": str(user.id),
+                "name": (f"{user.first_name} {user.last_name}".strip() or user.username),
+                "username": user.username,
+                "avatar_url": getattr(getattr(user, "profile", None), "avatar_url", "") or "",
+            }
+            for user in queryset
+        ]
+        return Response(results)
+
+
 class MembershipAdminListView(APIView):
     """Admin/treasurer search over all memberships, paginated and filterable.
 
@@ -63,7 +110,9 @@ class MembershipAdminListView(APIView):
     required_roles = ("admin", "treasurer")
 
     def get(self, request):
-        queryset = Membership.objects.select_related("user", "tier").order_by("-created_at")
+        queryset = Membership.objects.select_related("user", "user__profile", "tier").order_by(
+            "-created_at"
+        )
 
         status_filter = request.query_params.get("status", "").strip()
         if status_filter:
@@ -269,6 +318,33 @@ class MyProfileView(APIView):
         return Response(MyProfileSerializer(updated).data)
 
 
+class MyProfilePhotoView(APIView):
+    """Any signed-in member can upload their own profile photo — separate from
+    ``ImageUploadView`` (media app), which stays admin/volunteer-only for content
+    images (events, blog, shop). This is the only self-service image upload path."""
+
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        serializer = ImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded_file = serializer.validated_data["file"]
+
+        try:
+            filename = upload_image(
+                content_type=uploaded_file.content_type or "application/octet-stream",
+                data=uploaded_file.read(),
+            )
+        except ImageError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        path = reverse("media-image-serve", kwargs={"filename": filename})
+        avatar_url = request.build_absolute_uri(path)
+        set_avatar_url(user=request.user, avatar_url=avatar_url)
+        return Response({"url": avatar_url}, status=status.HTTP_201_CREATED)
+
+
 class AdminSetPositionView(APIView):
     permission_classes = [IsAuthenticated, HasAnyRole]
     required_roles = ("admin",)
@@ -293,6 +369,110 @@ class AdminSetPositionView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(MyProfileSerializer(updated).data)
+
+
+class AdminCreateMemberView(APIView):
+    """Manual member entry for people who joined offline (paper form, in person).
+    Mirrors self-registration's requirements — phone and photo are mandatory here
+    too — but skips email verification since an admin is vouching for the member,
+    and sends a password-reset link instead of the admin choosing a password."""
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, request):
+        serializer = AdminCreateMemberRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        avatar_url = request.data.get("avatar_url", "").strip()
+        if not avatar_url:
+            return Response(
+                {"avatar_url": ["A profile photo is required."]}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = create_member(**serializer.validated_data, avatar_url=avatar_url)
+        except MemberAdminError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(
+            {"id": str(user.id), "username": user.username, "email": user.email},
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class AdminUpdateMemberContactView(APIView):
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, request):
+        serializer = AdminUpdateContactRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            target_user = User.objects.get(id=serializer.validated_data["user_id"])
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        updated = update_member_contact(
+            user=target_user,
+            phone_number=serializer.validated_data.get("phone_number"),
+            avatar_url=serializer.validated_data.get("avatar_url"),
+        )
+        return Response(
+            {
+                "user_id": str(updated.id),
+                "phone_number": updated.phone_number,
+                "avatar_url": getattr(getattr(updated, "profile", None), "avatar_url", "") or "",
+            }
+        )
+
+
+class AdminSetMemberActiveView(APIView):
+    """Deactivate/reactivate a member's account (soft delete — preserves the
+    Membership/MemberProfile audit trail rather than destroying records)."""
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, request):
+        serializer = AdminSetActiveRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            target_user = User.objects.get(id=serializer.validated_data["user_id"])
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        updated = set_member_active(
+            user=target_user, is_active=serializer.validated_data["is_active"]
+        )
+        return Response({"user_id": str(updated.id), "is_active": updated.is_active})
+
+
+class AdminEraseMemberView(APIView):
+    """GDPR right-to-erasure: scrubs a member's personal data (never a raw row
+    delete — see erase_member's docstring for why that's unsafe on this schema).
+    Irreversible; logged to AuditLog."""
+
+    permission_classes = [IsAuthenticated, HasAnyRole]
+    required_roles = ("admin",)
+
+    def post(self, request):
+        serializer = AdminEraseMemberRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            target_user = User.objects.get(id=serializer.validated_data["user_id"])
+        except User.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            erase_member(user=target_user, actor=request.user)
+        except MemberAdminError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class PublicRosterView(APIView):

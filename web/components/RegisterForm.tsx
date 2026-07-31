@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { translate } from "@/lib/i18n/dictionary";
 import type { Lang } from "@/lib/i18n/config";
 
@@ -14,7 +14,11 @@ export function RegisterForm({ lang }: { lang: Lang }) {
     first_name: "",
     last_name: "",
     date_of_birth: "",
+    phone_number: "",
   });
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,15 +27,30 @@ export function RegisterForm({ lang }: { lang: Lang }) {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null;
+    setPhoto(file);
+    setPhotoPreview(file ? URL.createObjectURL(file) : null);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    if (!photo) {
+      setError(t("register.photoRequired"));
+      return;
+    }
     setLoading(true);
     setError(null);
 
+    const body = new FormData();
+    for (const [key, value] of Object.entries(form)) {
+      body.set(key, value);
+    }
+    body.set("photo", photo);
+
     const res = await fetch("/api/auth/register", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body,
     });
     const data = await res.json();
 
@@ -146,6 +165,44 @@ export function RegisterForm({ lang }: { lang: Lang }) {
           </div>
 
           <div className="field">
+            <label>{t("register.phone")}</label>
+            <input
+              className="input"
+              type="tel"
+              required
+              value={form.phone_number}
+              onChange={(event) => update("phone_number", event.target.value)}
+            />
+          </div>
+
+          <div className="field">
+            <label>{t("register.photo")}</label>
+            {photoPreview && (
+              <img
+                src={photoPreview}
+                alt=""
+                style={{
+                  display: "block",
+                  width: 96,
+                  height: 96,
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                  marginTop: 8,
+                  marginBottom: 8,
+                }}
+              />
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              required
+              onChange={handlePhotoChange}
+            />
+            <p style={{ marginTop: 6, fontSize: "0.82rem" }}>{t("register.photoNote")}</p>
+          </div>
+
+          <div className="field">
             <label>{t("register.password")}</label>
             <input
               className="input"
@@ -160,10 +217,18 @@ export function RegisterForm({ lang }: { lang: Lang }) {
 
           {error && <p className="form-error">{error}</p>}
 
+          <p style={{ marginTop: 18, fontSize: "0.82rem" }}>
+            {t("register.privacyPre")}{" "}
+            <Link href="/privacy" style={{ color: "var(--marigold-deep)", fontWeight: 700 }}>
+              {t("register.privacyLink")}
+            </Link>
+            .
+          </p>
+
           <button
             type="submit"
             className="btn btn-primary"
-            style={{ marginTop: 22, width: "100%", justifyContent: "center" }}
+            style={{ marginTop: 14, width: "100%", justifyContent: "center" }}
             disabled={loading}
           >
             {loading ? t("register.submitting") : t("register.submit")}

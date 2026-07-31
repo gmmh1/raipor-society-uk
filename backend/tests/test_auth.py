@@ -2,6 +2,7 @@ import pytest
 from django.contrib.auth.tokens import default_token_generator
 from django.core import mail
 from django.core.cache import cache
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -20,6 +21,27 @@ def _reset_throttle_cache():
     yield
 
 
+@pytest.fixture(autouse=True)
+def _mock_object_storage(monkeypatch):
+    store: dict[str, bytes] = {}
+
+    def fake_upload_bytes(*, key, data, content_type):
+        store[key] = data
+
+    def fake_download_bytes(*, key):
+        return store[key]
+
+    monkeypatch.setattr("apps.media.application.image_service.storage.upload_bytes", fake_upload_bytes)
+    monkeypatch.setattr(
+        "apps.media.application.image_service.storage.download_bytes", fake_download_bytes
+    )
+    yield
+
+
+def _photo(name: str = "photo.jpg") -> SimpleUploadedFile:
+    return SimpleUploadedFile(name, b"fake-image-bytes", content_type="image/jpeg")
+
+
 @pytest.mark.django_db
 def test_register_verify_login_refresh_logout_flow():
     client = APIClient()
@@ -31,14 +53,18 @@ def test_register_verify_login_refresh_logout_flow():
             "email": "newmember@example.com",
             "password": "correct-horse-battery",
             "date_of_birth": "1990-05-15",
+            "phone_number": "+44 7700 900123",
+            "photo": _photo(),
         },
-        format="json",
+        format="multipart",
     )
     assert register_response.status_code == 201
 
     user = User.objects.get(username="newmember")
     assert user.is_active is False
     assert user.roles.filter(code="member").exists()
+    assert user.phone_number == "+44 7700 900123"
+    assert user.profile.avatar_url
 
     # Regression: self-registration must create a Membership row so the new
     # member immediately shows up in the admin Membership list, which only
@@ -121,8 +147,10 @@ def test_register_rejects_duplicate_username():
             "email": "other@example.com",
             "password": "another-strong-pass",
             "date_of_birth": "1990-05-15",
+            "phone_number": "+44 7700 900124",
+            "photo": _photo(),
         },
-        format="json",
+        format="multipart",
     )
     assert response.status_code == 400
 
@@ -137,8 +165,10 @@ def test_register_requires_date_of_birth():
             "username": "nodobuser",
             "email": "nodob@example.com",
             "password": "another-strong-pass",
+            "phone_number": "+44 7700 900125",
+            "photo": _photo(),
         },
-        format="json",
+        format="multipart",
     )
     assert response.status_code == 400
     assert "date_of_birth" in response.json()
@@ -155,11 +185,94 @@ def test_register_rejects_future_date_of_birth():
             "email": "futuredob@example.com",
             "password": "another-strong-pass",
             "date_of_birth": "2999-01-01",
+            "phone_number": "+44 7700 900126",
+            "photo": _photo(),
         },
-        format="json",
+        format="multipart",
     )
     assert response.status_code == 400
     assert "date_of_birth" in response.json()
+
+
+@pytest.mark.django_db
+def test_register_requires_phone_number():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "nophoneuser",
+            "email": "nophone@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "1990-05-15",
+            "photo": _photo(),
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "phone_number" in response.json()
+    assert not User.objects.filter(username="nophoneuser").exists()
+
+
+@pytest.mark.django_db
+def test_register_rejects_invalid_phone_number():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "badphoneuser",
+            "email": "badphone@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "1990-05-15",
+            "phone_number": "abc",
+            "photo": _photo(),
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "phone_number" in response.json()
+
+
+@pytest.mark.django_db
+def test_register_requires_photo():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "nophotouser",
+            "email": "nophoto@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "1990-05-15",
+            "phone_number": "+44 7700 900127",
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "photo" in response.json()
+    assert not User.objects.filter(username="nophotouser").exists()
+
+
+@pytest.mark.django_db
+def test_register_rejects_non_image_photo():
+    client = APIClient()
+
+    response = client.post(
+        reverse("identity-register"),
+        data={
+            "username": "badphotouser",
+            "email": "badphoto@example.com",
+            "password": "another-strong-pass",
+            "date_of_birth": "1990-05-15",
+            "phone_number": "+44 7700 900128",
+            "photo": SimpleUploadedFile("virus.exe", b"not-an-image", content_type="application/x-msdownload"),
+        },
+        format="multipart",
+    )
+    assert response.status_code == 400
+    assert "photo" in response.json()
+    assert not User.objects.filter(username="badphotouser").exists()
 
 
 @pytest.mark.django_db
@@ -228,8 +341,10 @@ def test_register_throttles_after_limit():
                 "email": f"throttle{i}@example.com",
                 "password": "some-strong-password-1",
                 "date_of_birth": "1990-05-15",
+                "phone_number": "+44 7700 900129",
+                "photo": _photo(),
             },
-            format="json",
+            format="multipart",
         ).status_code
 
     assert last_status == 429

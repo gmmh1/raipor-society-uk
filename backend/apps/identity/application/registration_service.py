@@ -8,6 +8,7 @@ from django.utils import timezone
 from apps.identity.domain.roles import ROLE_MEMBER
 from apps.identity.models import EmailVerificationToken, Role, User
 from apps.membership.application.lifecycle_service import get_or_create_membership_for_user
+from apps.membership.application.profile_service import set_avatar_url
 from apps.notifications.application.notification_orchestrator import enqueue_notification
 from apps.notifications.domain.types import CHANNEL_EMAIL
 
@@ -25,6 +26,8 @@ def register_user(
     email: str,
     password: str,
     date_of_birth: date,
+    phone_number: str,
+    avatar_url: str,
     first_name: str = "",
     last_name: str = "",
 ) -> User:
@@ -39,6 +42,7 @@ def register_user(
         first_name=first_name,
         last_name=last_name,
         date_of_birth=date_of_birth,
+        phone_number=phone_number,
         is_active=False,
     )
     user.set_password(password)
@@ -47,6 +51,7 @@ def register_user(
     member_role, _ = Role.objects.get_or_create(code=ROLE_MEMBER, defaults={"name": "Member"})
     user.roles.add(member_role)
     get_or_create_membership_for_user(user)
+    set_avatar_url(user=user, avatar_url=avatar_url)
 
     token = _issue_verification_token(user)
     verify_link = f"{settings.WEB_APP_URL}/verify-email?token={token.token}"
