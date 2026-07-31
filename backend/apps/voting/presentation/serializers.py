@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
 from apps.voting.application.poll_service import has_user_voted, poll_status
-from apps.voting.domain.types import VISIBILITY_CHOICES
+from apps.voting.domain.types import (
+    MAX_ELECTION_CANDIDATES,
+    VISIBILITY_CHOICES,
+    VOTING_METHOD_CHOICES,
+    VOTING_METHOD_PLURALITY,
+)
 from apps.voting.models import Poll, PollOption
 
 
@@ -26,6 +31,7 @@ class PollSerializer(serializers.ModelSerializer):
             "description",
             "position",
             "visibility",
+            "voting_method",
             "opens_at",
             "closes_at",
             "quorum",
@@ -59,6 +65,9 @@ class PollCreateSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True, default="")
     position = serializers.CharField(max_length=128, required=False, allow_blank=True, default="")
     visibility = serializers.ChoiceField(choices=[choice[0] for choice in VISIBILITY_CHOICES])
+    voting_method = serializers.ChoiceField(
+        choices=[choice[0] for choice in VOTING_METHOD_CHOICES], default=VOTING_METHOD_PLURALITY
+    )
     opens_at = serializers.DateTimeField()
     closes_at = serializers.DateTimeField()
     quorum = serializers.IntegerField(min_value=0, default=0)
@@ -70,3 +79,11 @@ class PollCreateSerializer(serializers.Serializer):
 
 class CastVoteRequestSerializer(serializers.Serializer):
     option_id = serializers.UUIDField()
+
+
+class CastRankedVoteRequestSerializer(serializers.Serializer):
+    ranked_option_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        min_length=1,
+        max_length=MAX_ELECTION_CANDIDATES,
+    )

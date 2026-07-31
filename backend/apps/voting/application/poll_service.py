@@ -1,9 +1,12 @@
+import uuid
+
 from django.db import IntegrityError, transaction
 from django.db.models import Count, QuerySet
 from django.utils import timezone
 
 from apps.identity.application.rbac_service import user_has_any_role
 from apps.identity.models import User
+from apps.voting.application.rcv_service import tally_ranked_choice
 from apps.voting.domain.types import (
     MAX_ELECTION_CANDIDATES,
     STAFF_ROLES,
@@ -12,8 +15,10 @@ from apps.voting.domain.types import (
     STATUS_UPCOMING,
     VISIBILITY_MEMBER,
     VISIBILITY_PUBLIC,
+    VOTING_METHOD_PLURALITY,
+    VOTING_METHOD_RANKED_CHOICE,
 )
-from apps.voting.models import Poll, PollBallotReceipt, PollOption, PollVote
+from apps.voting.models import Poll, PollBallotReceipt, PollOption, PollRankedVote, PollVote
 
 
 class VotingError(ValueError):
@@ -45,6 +50,7 @@ def create_poll(
     visibility: str,
     creator,
     position: str = "",
+    voting_method: str = VOTING_METHOD_PLURALITY,
 ) -> Poll:
     if not title.strip():
         raise VotingError("Title is required.")
@@ -74,6 +80,7 @@ def create_poll(
         description=description,
         position=position,
         visibility=visibility,
+        voting_method=voting_method,
         opens_at=opens_at,
         closes_at=closes_at,
         quorum=quorum,
@@ -150,6 +157,38 @@ def cast_vote(*, poll: Poll, option: PollOption, user) -> None:
     PollVote.objects.create(poll=poll, option=option)
 
 
+@transaction.atomic
+def cast_ranked_vote(*, poll: Poll, ranked_options: list[PollOption], user) -> None:
+    if poll.voting_method != VOTING_METHOD_RANKED_CHOICE:
+        raise VotingError("This poll does not use ranked-choice voting.")
+    if not ranked_options:
+        raise VotingError("Rank at least one candidate.")
+
+    option_ids = [option.id for option in ranked_options]
+    if len(set(option_ids)) != len(option_ids):
+        raise VotingError("You can't rank the same candidate twice.")
+    if any(option.poll_id != poll.id for option in ranked_options):
+        raise VotingError("Option does not belong to this poll.")
+    if poll_status(poll) != STATUS_OPEN:
+        raise VotingError("This poll is not currently open for voting.")
+
+    try:
+        with transaction.atomic():
+            PollBallotReceipt.objects.create(poll=poll, user=user)
+    except IntegrityError as exc:
+        raise VotingError("You have already voted in this poll.") from exc
+
+    # Same anonymity principle as PollVote: ballot_token groups this voter's ranking
+    # together without any link back to the PollBallotReceipt/user above.
+    ballot_token = uuid.uuid4()
+    PollRankedVote.objects.bulk_create(
+        [
+            PollRankedVote(poll=poll, ballot_token=ballot_token, option=option, rank=index + 1)
+            for index, option in enumerate(ranked_options)
+        ]
+    )
+
+
 def has_user_voted(*, poll: Poll, user) -> bool:
     if not user or not getattr(user, "is_authenticated", False):
         return False
@@ -171,9 +210,10 @@ def get_results(*, poll: Poll, user) -> dict:
     )
     ballot_count = PollBallotReceipt.objects.filter(poll=poll).count()
 
-    return {
+    results = {
         "poll_id": str(poll.id),
         "status": poll_status(poll),
+        "voting_method": poll.voting_method,
         "ballot_count": ballot_count,
         "quorum": poll.quorum,
         "quorum_met": ballot_count >= poll.quorum,
@@ -187,3 +227,10 @@ def get_results(*, poll: Poll, user) -> dict:
             for option in tallies
         ],
     }
+
+    if poll.voting_method == VOTING_METHOD_RANKED_CHOICE:
+        rcv = tally_ranked_choice(poll)
+        results["rounds"] = rcv["rounds"]
+        results["winner_option_ids"] = rcv["winner_option_ids"]
+
+    return results

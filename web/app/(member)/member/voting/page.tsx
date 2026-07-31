@@ -9,6 +9,7 @@ type Poll = {
   description: string;
   position: string;
   status: "upcoming" | "open" | "closed";
+  voting_method: "plurality" | "ranked_choice";
   has_voted: boolean;
   quorum: number;
   options: { id: string; text: string; image_url: string }[];
@@ -36,7 +37,12 @@ export default async function MemberVotingPage() {
             {poll.description && <p style={{ marginTop: 8 }}>{poll.description}</p>}
 
             {poll.status === "open" && !poll.has_voted && (
-              <VoteForm pollId={poll.id} options={poll.options} lang={lang} />
+              <VoteForm
+                pollId={poll.id}
+                options={poll.options}
+                votingMethod={poll.voting_method}
+                lang={lang}
+              />
             )}
             {poll.status === "open" && poll.has_voted && (
               <p style={{ marginTop: 16, color: "var(--success)", fontWeight: 700 }}>

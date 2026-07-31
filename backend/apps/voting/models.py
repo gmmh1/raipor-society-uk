@@ -1,8 +1,15 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 
 from apps.common.models import SoftDeleteModel, TimeStampedModel, UUIDModel
-from apps.voting.domain.types import VISIBILITY_CHOICES, VISIBILITY_MEMBER
+from apps.voting.domain.types import (
+    VISIBILITY_CHOICES,
+    VISIBILITY_MEMBER,
+    VOTING_METHOD_CHOICES,
+    VOTING_METHOD_PLURALITY,
+)
 
 
 class Poll(UUIDModel, TimeStampedModel, SoftDeleteModel):
@@ -14,6 +21,9 @@ class Poll(UUIDModel, TimeStampedModel, SoftDeleteModel):
     position = models.CharField(max_length=128, blank=True)
     visibility = models.CharField(
         max_length=16, choices=VISIBILITY_CHOICES, default=VISIBILITY_MEMBER
+    )
+    voting_method = models.CharField(
+        max_length=16, choices=VOTING_METHOD_CHOICES, default=VOTING_METHOD_PLURALITY
     )
     opens_at = models.DateTimeField()
     closes_at = models.DateTimeField()
@@ -99,4 +109,29 @@ class PollVote(UUIDModel, TimeStampedModel):
         db_table = "voting_poll_vote"
         indexes = [
             models.Index(fields=["poll", "option"]),
+        ]
+
+
+class PollRankedVote(UUIDModel, TimeStampedModel):
+    """The anonymous tally for a ranked-choice (instant-runoff) poll — one row per
+    (ballot, rank). Same anonymity principle as ``PollVote``: ``ballot_token`` groups
+    the rows belonging to one voter's full ranking without identifying who cast it —
+    it carries no link to ``PollBallotReceipt`` or any user.
+    """
+
+    poll = models.ForeignKey(Poll, on_delete=models.PROTECT, related_name="ranked_votes")
+    ballot_token = models.UUIDField(default=uuid.uuid4)
+    option = models.ForeignKey(PollOption, on_delete=models.PROTECT, related_name="ranked_votes")
+    rank = models.PositiveIntegerField()
+
+    class Meta:
+        db_table = "voting_poll_ranked_vote"
+        constraints = [
+            models.UniqueConstraint(fields=["ballot_token", "rank"], name="uniq_ranked_ballot_rank"),
+            models.UniqueConstraint(
+                fields=["ballot_token", "option"], name="uniq_ranked_ballot_option"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["poll", "ballot_token"]),
         ]

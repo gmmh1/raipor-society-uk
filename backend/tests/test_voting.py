@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pytest
 from django.urls import reverse
@@ -6,14 +6,17 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.identity.models import Role, User
-from apps.membership.models import MemberProfile
+from apps.membership.domain.status import STATUS_ACTIVE, STATUS_PENDING as MEMBERSHIP_STATUS_PENDING
+from apps.membership.models import MemberProfile, Membership
 from apps.voting.application.poll_service import (
     VotingError,
+    cast_ranked_vote,
     cast_vote,
     create_poll,
     get_results,
 )
-from apps.voting.models import Poll, PollBallotReceipt, PollVote
+from apps.voting.domain.types import VOTING_METHOD_RANKED_CHOICE
+from apps.voting.models import Poll, PollBallotReceipt, PollRankedVote, PollVote
 
 
 def _opts(*names):
@@ -24,6 +27,19 @@ def _make_admin(username: str) -> User:
     user = User.objects.create_user(username=username, password="pass123")
     role, _ = Role.objects.get_or_create(code="admin", defaults={"name": "Admin"})
     user.roles.add(role)
+    return user
+
+
+def _make_voter(username: str, *, date_of_birth=None, membership_status: str = STATUS_ACTIVE) -> User:
+    """A voter eligible under ``CanVote``: the ``member`` role, an admin-approved
+    (active) Membership, and — unless a ``date_of_birth`` under 18 is passed — treated
+    as an adult (``User.is_minor`` is False when date_of_birth is unset)."""
+    user = User.objects.create_user(
+        username=username, password="pass123", date_of_birth=date_of_birth
+    )
+    role, _ = Role.objects.get_or_create(code="member", defaults={"name": "Member"})
+    user.roles.add(role)
+    Membership.objects.create(user=user, status=membership_status)
     return user
 
 
@@ -229,9 +245,65 @@ def test_poll_create_requires_staff_role():
 
 
 @pytest.mark.django_db
+def test_cast_vote_endpoint_requires_member_role():
+    admin = _make_admin("poll-admin-14")
+    staff_only = User.objects.create_user(username="staff-only-voter", password="pass123")
+    poll = _open_poll(creator=admin)
+    option_id = str(poll.options.first().id)
+
+    client = APIClient()
+    client.force_authenticate(user=staff_only)
+
+    response = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"option_id": option_id},
+        format="json",
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cast_vote_endpoint_rejects_member_without_active_membership():
+    admin = _make_admin("poll-admin-15")
+    pending_member = _make_voter("pending-voter", membership_status=MEMBERSHIP_STATUS_PENDING)
+    poll = _open_poll(creator=admin)
+    option_id = str(poll.options.first().id)
+
+    client = APIClient()
+    client.force_authenticate(user=pending_member)
+
+    response = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"option_id": option_id},
+        format="json",
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cast_vote_endpoint_rejects_minor():
+    admin = _make_admin("poll-admin-16")
+    today = timezone.localdate()
+    seventeen_years_ago = date(today.year - 17, today.month, today.day)
+    minor = _make_voter("minor-voter", date_of_birth=seventeen_years_ago)
+    poll = _open_poll(creator=admin)
+    option_id = str(poll.options.first().id)
+
+    client = APIClient()
+    client.force_authenticate(user=minor)
+
+    response = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"option_id": option_id},
+        format="json",
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_cast_vote_endpoint_and_has_voted_flag():
     admin = _make_admin("poll-admin-11")
-    voter = User.objects.create_user(username="voter-7", password="pass123")
+    voter = _make_voter("voter-7")
     poll = _open_poll(creator=admin)
     option_id = str(poll.options.first().id)
 
@@ -484,3 +556,162 @@ def test_poll_create_endpoint_allows_a_single_uncontested_candidate():
     )
     assert response.status_code == 201
     assert len(response.json()["options"]) == 1
+
+
+# -- Ranked-choice voting (PyRankVote / instant-runoff) -----------------------------
+
+
+def _ranked_election(*, creator, candidates, quorum: int = 0) -> Poll:
+    now = timezone.now()
+    return create_poll(
+        title="Chair Election",
+        description="",
+        position="Chair",
+        voting_method=VOTING_METHOD_RANKED_CHOICE,
+        options=_candidate_opts(*candidates),
+        opens_at=now - timedelta(hours=1),
+        closes_at=now + timedelta(hours=1),
+        quorum=quorum,
+        visibility="member",
+        creator=creator,
+    )
+
+
+@pytest.mark.django_db
+def test_create_poll_ranked_choice_sets_voting_method():
+    admin = _make_admin("poll-admin-rcv-1")
+    candidates = [_member_with_photo(f"rcv1-candidate-{i}") for i in range(3)]
+
+    poll = _ranked_election(creator=admin, candidates=candidates)
+
+    assert poll.voting_method == VOTING_METHOD_RANKED_CHOICE
+    assert poll.options.count() == 3
+
+
+@pytest.mark.django_db
+def test_cast_ranked_vote_rejects_wrong_voting_method():
+    admin = _make_admin("poll-admin-rcv-2")
+    voter = _make_voter("rcv2-voter")
+    poll = _open_poll(creator=admin)  # plurality, not ranked_choice
+
+    with pytest.raises(VotingError, match="does not use ranked-choice voting"):
+        cast_ranked_vote(poll=poll, ranked_options=[poll.options.first()], user=voter)
+
+
+@pytest.mark.django_db
+def test_cast_ranked_vote_rejects_duplicate_option():
+    admin = _make_admin("poll-admin-rcv-3")
+    voter = _make_voter("rcv3-voter")
+    candidates = [_member_with_photo(f"rcv3-candidate-{i}") for i in range(2)]
+    poll = _ranked_election(creator=admin, candidates=candidates)
+    option = poll.options.first()
+
+    with pytest.raises(VotingError, match="twice"):
+        cast_ranked_vote(poll=poll, ranked_options=[option, option], user=voter)
+
+
+@pytest.mark.django_db
+def test_cast_ranked_vote_rejects_option_from_a_different_poll():
+    admin = _make_admin("poll-admin-rcv-4")
+    voter = _make_voter("rcv4-voter")
+    candidates_a = [_member_with_photo(f"rcv4a-candidate-{i}") for i in range(2)]
+    candidates_b = [_member_with_photo(f"rcv4b-candidate-{i}") for i in range(2)]
+    poll_a = _ranked_election(creator=admin, candidates=candidates_a)
+    poll_b = _ranked_election(creator=admin, candidates=candidates_b)
+
+    with pytest.raises(VotingError, match="does not belong"):
+        cast_ranked_vote(poll=poll_a, ranked_options=[poll_b.options.first()], user=voter)
+
+
+@pytest.mark.django_db
+def test_cast_ranked_vote_blocks_duplicate_ballot_per_user():
+    admin = _make_admin("poll-admin-rcv-5")
+    voter = _make_voter("rcv5-voter")
+    candidates = [_member_with_photo(f"rcv5-candidate-{i}") for i in range(2)]
+    poll = _ranked_election(creator=admin, candidates=candidates)
+    options = list(poll.options.all())
+
+    cast_ranked_vote(poll=poll, ranked_options=options, user=voter)
+
+    with pytest.raises(VotingError, match="already voted"):
+        cast_ranked_vote(poll=poll, ranked_options=list(reversed(options)), user=voter)
+
+    assert PollBallotReceipt.objects.filter(poll=poll, user=voter).count() == 1
+
+
+@pytest.mark.django_db
+def test_instant_runoff_tally_matches_known_result():
+    """Reproduces PyRankVote's own documented Bush/Gore/Nader example: Bush leads on
+    first-choice votes, but Nader's voters prefer Gore over Bush, so eliminating
+    Nader in round 1 and transferring his votes hands the win to Gore in round 2
+    (final: Gore 5, Bush 4, Nader 0)."""
+    admin = _make_admin("poll-admin-rcv-6")
+    bush = _member_with_photo("rcv6-bush")
+    gore = _member_with_photo("rcv6-gore")
+    nader = _member_with_photo("rcv6-nader")
+    poll = _ranked_election(creator=admin, candidates=[bush, gore, nader])
+
+    option_by_candidate = {option.candidate_id: option for option in poll.options.all()}
+    bush_o, gore_o, nader_o = option_by_candidate[bush.id], option_by_candidate[gore.id], option_by_candidate[nader.id]
+
+    ballots = [
+        [bush_o, nader_o, gore_o],
+        [bush_o, nader_o, gore_o],
+        [bush_o, nader_o],
+        [bush_o, nader_o],
+        [nader_o, gore_o, bush_o],
+        [nader_o, gore_o],
+        [gore_o, nader_o, bush_o],
+        [gore_o, nader_o],
+        [gore_o, nader_o],
+    ]
+    for index, ranked_options in enumerate(ballots):
+        cast_ranked_vote(
+            poll=poll, ranked_options=ranked_options, user=_make_voter(f"rcv6-voter-{index}")
+        )
+
+    results = get_results(poll=poll, user=admin)
+
+    assert results["voting_method"] == VOTING_METHOD_RANKED_CHOICE
+    assert results["ballot_count"] == 9
+    assert results["winner_option_ids"] == [str(gore_o.id)]
+    assert len(results["rounds"]) == 2
+
+    round_1 = {c["option_id"]: c for c in results["rounds"][0]["candidates"]}
+    assert round_1[str(bush_o.id)]["votes"] == 4
+    assert round_1[str(gore_o.id)]["votes"] == 3
+    assert round_1[str(nader_o.id)]["votes"] == 2
+    assert round_1[str(nader_o.id)]["status"] == "Rejected"
+
+    round_2 = {c["option_id"]: c for c in results["rounds"][1]["candidates"]}
+    assert round_2[str(gore_o.id)]["votes"] == 5
+    assert round_2[str(gore_o.id)]["status"] == "Elected"
+    assert round_2[str(bush_o.id)]["votes"] == 4
+    assert round_2[str(bush_o.id)]["status"] == "Rejected"
+
+
+@pytest.mark.django_db
+def test_cast_ranked_vote_endpoint_full_flow():
+    admin = _make_admin("poll-admin-rcv-7")
+    candidates = [_member_with_photo(f"rcv7-candidate-{i}") for i in range(2)]
+    poll = _ranked_election(creator=admin, candidates=candidates)
+    options = list(poll.options.all())
+    voter = _make_voter("rcv7-voter")
+
+    client = APIClient()
+    client.force_authenticate(user=voter)
+
+    response = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"ranked_option_ids": [str(options[1].id), str(options[0].id)]},
+        format="json",
+    )
+    assert response.status_code == 201
+    assert PollRankedVote.objects.filter(poll=poll).count() == 2
+
+    duplicate = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"ranked_option_ids": [str(options[0].id)]},
+        format="json",
+    )
+    assert duplicate.status_code == 400

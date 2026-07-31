@@ -23,6 +23,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
   const [position, setPosition] = useState("");
   const [options, setOptions] = useState<OptionInput[]>(emptyOptions(2));
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [votingMethod, setVotingMethod] = useState<"plurality" | "ranked_choice">("plurality");
   const [opensAt, setOpensAt] = useState("");
   const [closesAt, setClosesAt] = useState("");
   const [quorum, setQuorum] = useState("0");
@@ -78,6 +79,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
         description,
         position,
         options: bodyOptions,
+        voting_method: isElection ? votingMethod : "plurality",
         opens_at: new Date(opensAt).toISOString(),
         closes_at: new Date(closesAt).toISOString(),
         quorum: Number(quorum) || 0,
@@ -96,6 +98,7 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
     setPosition("");
     setOptions(emptyOptions(2));
     setCandidates([]);
+    setVotingMethod("plurality");
     setOpensAt("");
     setClosesAt("");
     setQuorum("0");
@@ -134,12 +137,30 @@ export function CreatePollForm({ lang }: { lang: Lang }) {
       </div>
 
       {isElection ? (
-        <CandidatePicker
-          selected={candidates}
-          onChange={setCandidates}
-          maxCandidates={MAX_ELECTION_CANDIDATES}
-          lang={lang}
-        />
+        <>
+          <div className="field">
+            <label>{t("adminGovernance.votingMethodLabel")}</label>
+            <select
+              className="select"
+              value={votingMethod}
+              onChange={(event) => setVotingMethod(event.target.value as "plurality" | "ranked_choice")}
+            >
+              <option value="plurality">{t("adminGovernance.votingMethodPlurality")}</option>
+              <option value="ranked_choice">{t("adminGovernance.votingMethodRanked")}</option>
+            </select>
+            <p style={{ marginTop: 6, fontSize: "0.85rem", color: "var(--muted)" }}>
+              {votingMethod === "ranked_choice"
+                ? t("adminGovernance.votingMethodRankedHint")
+                : t("adminGovernance.votingMethodPluralityHint")}
+            </p>
+          </div>
+          <CandidatePicker
+            selected={candidates}
+            onChange={setCandidates}
+            maxCandidates={MAX_ELECTION_CANDIDATES}
+            lang={lang}
+          />
+        </>
       ) : (
         <div className="field">
           <label>{t("adminGovernance.options")}</label>

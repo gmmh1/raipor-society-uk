@@ -17,3 +17,10 @@ STAFF_ROLES = ("admin", "volunteer")
 # A poll with a non-blank Poll.position (a committee-position election) can
 # have at most this many candidates standing for the one position — 1 to 10.
 MAX_ELECTION_CANDIDATES = 10
+
+VOTING_METHOD_PLURALITY = "plurality"
+VOTING_METHOD_RANKED_CHOICE = "ranked_choice"
+VOTING_METHOD_CHOICES = (
+    (VOTING_METHOD_PLURALITY, "Plurality (most votes wins)"),
+    (VOTING_METHOD_RANKED_CHOICE, "Ranked-choice (instant runoff)"),
+)
