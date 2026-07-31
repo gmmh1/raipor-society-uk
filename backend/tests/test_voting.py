@@ -245,14 +245,14 @@ def test_poll_create_requires_staff_role():
 
 
 @pytest.mark.django_db
-def test_cast_vote_endpoint_requires_member_role():
+def test_cast_vote_endpoint_rejects_account_with_no_membership():
     admin = _make_admin("poll-admin-14")
-    staff_only = User.objects.create_user(username="staff-only-voter", password="pass123")
+    no_membership = User.objects.create_user(username="no-membership-voter", password="pass123")
     poll = _open_poll(creator=admin)
     option_id = str(poll.options.first().id)
 
     client = APIClient()
-    client.force_authenticate(user=staff_only)
+    client.force_authenticate(user=no_membership)
 
     response = client.post(
         reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
@@ -260,6 +260,28 @@ def test_cast_vote_endpoint_requires_member_role():
         format="json",
     )
     assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_cast_vote_endpoint_allows_voter_regardless_of_which_roles_held():
+    """Voting eligibility is membership + age, not which role(s)/committee position
+    someone holds — an admin who is also an active adult member votes like anyone
+    else, and doesn't need the (separate, unrelated) "member" role specifically."""
+    admin_voter = _make_admin("poll-admin-voter-1")
+    Membership.objects.create(user=admin_voter, status=STATUS_ACTIVE)
+    creator = _make_admin("poll-admin-15b")
+    poll = _open_poll(creator=creator)
+    option_id = str(poll.options.first().id)
+
+    client = APIClient()
+    client.force_authenticate(user=admin_voter)
+
+    response = client.post(
+        reverse("voting-polls-vote", kwargs={"poll_id": poll.id}),
+        data={"option_id": option_id},
+        format="json",
+    )
+    assert response.status_code == 201
 
 
 @pytest.mark.django_db
