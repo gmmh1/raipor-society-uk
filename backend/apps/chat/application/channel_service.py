@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.db import transaction
 
+from apps.chat.application.jitsi_service import mint_jitsi_token, room_name_for_channel
 from apps.chat.domain.types import (
     CHANNEL_TYPE_DIRECT,
     CHANNEL_TYPE_GROUP,
@@ -160,3 +162,15 @@ def list_channel_messages(*, channel: ChatChannel, user, limit: int = 50):
 
 def list_user_channels(*, user):
     return ChatChannel.objects.filter(memberships__user=user).distinct().order_by("-updated_at")
+
+
+def create_video_call_token(*, channel: ChatChannel, user) -> dict:
+    """Same channel-membership gate as messages/calls today — only a validated
+    member of this channel (or a supervisor) can get a token to join its room."""
+    is_member = ChatChannelMembership.objects.filter(channel=channel, user=user).exists()
+    if not is_member and not _is_supervisor(user):
+        raise ChatError("You are not a member of this channel.")
+
+    room = room_name_for_channel(channel.id)
+    token = mint_jitsi_token(room=room, user=user)
+    return {"domain": settings.JITSI_DOMAIN, "room": room, "token": token}

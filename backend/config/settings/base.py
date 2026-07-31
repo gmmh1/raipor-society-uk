@@ -232,6 +232,17 @@ WHATSAPP_PHONE_NUMBER_ID = env("WHATSAPP_PHONE_NUMBER_ID", default="")
 WHATSAPP_API_TOKEN = env("WHATSAPP_API_TOKEN", default="")
 
 # -------------------------------
+# Video calling (self-hosted Jitsi Meet)
+# -------------------------------
+# JITSI_APP_SECRET is the shared trust boundary for minting valid meeting tokens —
+# any application holding it can generate a token this Jitsi server accepts (see
+# apps.chat.application.jitsi_service.mint_jitsi_token for the exact JWT shape),
+# which is what makes this reusable beyond just this app's own chat video calls.
+JITSI_DOMAIN = env("JITSI_DOMAIN", default="meet.jit.si")
+JITSI_APP_ID = env("JITSI_APP_ID", default="")
+JITSI_APP_SECRET = env("JITSI_APP_SECRET", default="")
+
+# -------------------------------
 # Shop
 # -------------------------------
 SHOP_ORDER_RESERVATION_TIMEOUT_MINUTES = env.int(

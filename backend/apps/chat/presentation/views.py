@@ -8,6 +8,7 @@ from apps.chat.application.channel_service import (
     add_member,
     create_direct_channel,
     create_group_channel,
+    create_video_call_token,
     flag_message,
     list_channel_messages,
     list_user_channels,
@@ -23,6 +24,7 @@ from apps.chat.presentation.serializers import (
     CreateGroupChannelRequestSerializer,
     FlagMessageRequestSerializer,
     SendMessageRequestSerializer,
+    VideoCallTokenSerializer,
 )
 from apps.identity.models import User
 from apps.identity.permissions import HasAnyRole
@@ -133,6 +135,23 @@ class ChannelMessagesView(APIView):
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(ChatMessageSerializer(message).data, status=status.HTTP_201_CREATED)
+
+
+class ChannelVideoCallTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, channel_id):
+        try:
+            channel = ChatChannel.objects.get(id=channel_id)
+        except ChatChannel.DoesNotExist:
+            return Response({"detail": "Channel not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            result = create_video_call_token(channel=channel, user=request.user)
+        except ChatError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_403_FORBIDDEN)
+
+        return Response(VideoCallTokenSerializer(result).data)
 
 
 class MessageFlagView(APIView):

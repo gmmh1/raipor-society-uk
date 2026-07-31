@@ -271,6 +271,7 @@ const en = {
   "memberChat.startVideoCall": "Start video call",
   "memberChat.videoCall": "Video call",
   "memberChat.endCall": "End call",
+  "memberChat.videoCallError": "Couldn't start the video call.",
   "memberChat.directMessage": "Direct message",
   "memberChat.group": "Group",
 
@@ -896,6 +897,7 @@ const bn: Partial<Record<keyof typeof en, string>> = {
   "memberChat.startVideoCall": "ভিডিও কল শুরু করুন",
   "memberChat.videoCall": "ভিডিও কল",
   "memberChat.endCall": "কল শেষ করুন",
+  "memberChat.videoCallError": "ভিডিও কল শুরু করা যায়নি।",
   "memberChat.directMessage": "সরাসরি বার্তা",
   "memberChat.group": "গ্রুপ",
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { callApi } from "@/lib/clientApi";
 import { translate } from "@/lib/i18n/dictionary";
 import type { Lang } from "@/lib/i18n/config";
 
@@ -12,18 +13,17 @@ declare global {
   }
 }
 
-const JITSI_DOMAIN = "meet.jit.si";
 const SCRIPT_ID = "jitsi-external-api-script";
 
+type VideoCallToken = { domain: string; room: string; token: string };
+
 /**
- * Embeds a video call via the free public Jitsi Meet instance — no self-hosted
- * server required for this first version (see CLAUDE.md's Jitsi/LiveKit note;
- * self-hosting is a reasonable future upgrade for full data control). The
- * room name is derived from the chat channel's UUID, so it's unguessable in
- * practice, but note that meet.jit.si has no authentication of its own: anyone
- * who somehow learns the room name could join. This inherits the same
- * channel-membership gate as the surrounding chat (you can only open the call
- * for a channel you're already a validated member of).
+ * Embeds a video call via our self-hosted Jitsi Meet server. A short-lived,
+ * per-channel JWT is fetched from the backend first (mints against the same
+ * shared secret any other application could use to join this server — see
+ * README.md's "Video calling" section) and passed to the Jitsi embed, so only
+ * validated channel members ever get a token, and the room itself requires it
+ * to join (ENABLE_GUESTS=0 server-side — no unauthenticated fallback).
  */
 export function VideoCallPanel({
   channelId,
@@ -36,15 +36,17 @@ export function VideoCallPanel({
 }) {
   const t = (key: Parameters<typeof translate>[1]) => translate(lang, key);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let disposed = false;
     let api: { dispose: () => void } | null = null;
 
-    function mount() {
+    function mount(callToken: VideoCallToken) {
       if (disposed || !containerRef.current || !window.JitsiMeetExternalAPI) return;
-      api = new window.JitsiMeetExternalAPI(JITSI_DOMAIN, {
-        roomName: `raipur-society-uk-${channelId}`,
+      api = new window.JitsiMeetExternalAPI(callToken.domain, {
+        roomName: callToken.room,
+        jwt: callToken.token,
         parentNode: containerRef.current,
         width: "100%",
         height: "100%",
@@ -52,18 +54,39 @@ export function VideoCallPanel({
       });
     }
 
-    if (window.JitsiMeetExternalAPI) {
-      mount();
-    } else if (!document.getElementById(SCRIPT_ID)) {
-      const script = document.createElement("script");
-      script.id = SCRIPT_ID;
-      script.src = `https://${JITSI_DOMAIN}/external_api.js`;
-      script.async = true;
-      script.onload = mount;
-      document.body.appendChild(script);
-    } else {
-      document.getElementById(SCRIPT_ID)?.addEventListener("load", mount);
+    function loadScript(domain: string): Promise<void> {
+      return new Promise((resolve) => {
+        if (window.JitsiMeetExternalAPI) {
+          resolve();
+        } else if (!document.getElementById(SCRIPT_ID)) {
+          const script = document.createElement("script");
+          script.id = SCRIPT_ID;
+          script.src = `https://${domain}/external_api.js`;
+          script.async = true;
+          script.onload = () => resolve();
+          document.body.appendChild(script);
+        } else {
+          document.getElementById(SCRIPT_ID)?.addEventListener("load", () => resolve());
+        }
+      });
     }
+
+    async function start() {
+      const result = await callApi<VideoCallToken & { detail?: string }>(
+        `/chat/channels/${channelId}/video-token/`,
+        { body: {} }
+      );
+      if (disposed) return;
+      if (!result.ok || !result.data?.token) {
+        setError(result.data?.detail || t("memberChat.videoCallError"));
+        return;
+      }
+      const callToken = result.data;
+      await loadScript(callToken.domain);
+      mount(callToken);
+    }
+
+    start();
 
     return () => {
       disposed = true;
@@ -79,7 +102,11 @@ export function VideoCallPanel({
           {t("memberChat.endCall")}
         </button>
       </div>
-      <div ref={containerRef} style={{ height: 420, borderRadius: "var(--radius-sm)", overflow: "hidden" }} />
+      {error ? (
+        <p className="form-error">{error}</p>
+      ) : (
+        <div ref={containerRef} style={{ height: 420, borderRadius: "var(--radius-sm)", overflow: "hidden" }} />
+      )}
     </div>
   );
 }

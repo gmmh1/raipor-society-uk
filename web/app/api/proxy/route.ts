@@ -36,6 +36,7 @@ const ALLOWED = [
   /^\/chat\/channels\/group\/$/,
   /^\/chat\/channels\/[0-9a-f-]{36}\/members\/$/,
   /^\/chat\/channels\/[0-9a-f-]{36}\/messages\/$/,
+  /^\/chat\/channels\/[0-9a-f-]{36}\/video-token\/$/,
   /^\/shop\/orders\/$/,
   /^\/shop\/orders\/[0-9a-f-]{36}\/checkout\/$/,
   /^\/shop\/orders\/transitions\/$/,

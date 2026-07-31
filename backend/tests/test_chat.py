@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 
+import jwt
 import pytest
 from asgiref.sync import async_to_sync
 from channels.db import database_sync_to_async
@@ -16,6 +17,7 @@ from apps.chat.application.channel_service import (
     add_member,
     create_direct_channel,
     create_group_channel,
+    create_video_call_token,
     flag_message,
     list_channel_messages,
     post_message,
@@ -211,6 +213,48 @@ def test_list_channel_messages_denies_non_member_non_supervisor():
         list_channel_messages(channel=channel, user=outsider)
 
 
+JITSI_TEST_SETTINGS = {
+    "JITSI_APP_ID": "raipur-society-uk-test",
+    "JITSI_APP_SECRET": "test-only-shared-secret",
+    "JITSI_DOMAIN": "meet.test.local",
+}
+
+
+@pytest.mark.django_db
+@override_settings(**JITSI_TEST_SETTINGS)
+def test_create_video_call_token_denies_non_member():
+    creator = _make_adult("creator-video-1")
+    other = _make_adult("other-video-1")
+    channel = create_group_channel(name="Group", creator=creator, member_ids=[other.id])
+    outsider = _make_adult("outsider-video-1")
+
+    with pytest.raises(ChatError):
+        create_video_call_token(channel=channel, user=outsider)
+
+
+@pytest.mark.django_db
+@override_settings(**JITSI_TEST_SETTINGS)
+def test_create_video_call_token_returns_valid_signed_jwt():
+    alice = _make_adult("alice-video-1")
+    bob = _make_adult("bob-video-1")
+    channel = create_direct_channel(initiator=alice, other_user=bob)
+
+    result = create_video_call_token(channel=channel, user=alice)
+
+    assert result["domain"] == "meet.test.local"
+    assert result["room"] == f"raipur-society-uk-{channel.id}"
+
+    decoded = jwt.decode(
+        result["token"],
+        "test-only-shared-secret",
+        algorithms=["HS256"],
+        audience="raipur-society-uk-test",
+    )
+    assert decoded["iss"] == "raipur-society-uk-test"
+    assert decoded["room"] == result["room"]
+    assert decoded["context"]["user"]["id"] == str(alice.id)
+
+
 # -- REST API --------------------------------------------------------------------
 
 
@@ -280,6 +324,56 @@ def test_flag_message_endpoint_requires_supervisor_role():
     allowed = client.post(flag_url, data={"reason": "inappropriate"}, format="json")
     assert allowed.status_code == 200
     assert allowed.json()["is_flagged"] is True
+
+
+@pytest.mark.django_db
+@override_settings(**JITSI_TEST_SETTINGS)
+def test_video_call_token_endpoint_requires_authentication():
+    alice = _make_adult("alice-video-api-1")
+    bob = _make_adult("bob-video-api-1")
+    channel = create_direct_channel(initiator=alice, other_user=bob)
+
+    client = APIClient()
+    response = client.post(
+        reverse("chat-channels-video-token", kwargs={"channel_id": channel.id})
+    )
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+@override_settings(**JITSI_TEST_SETTINGS)
+def test_video_call_token_endpoint_forbidden_for_non_member():
+    creator = _make_adult("creator-video-api-2")
+    other = _make_adult("other-video-api-2")
+    channel = create_group_channel(name="Group", creator=creator, member_ids=[other.id])
+    outsider = _make_adult("outsider-video-api-2")
+
+    client = APIClient()
+    client.force_authenticate(user=outsider)
+    response = client.post(
+        reverse("chat-channels-video-token", kwargs={"channel_id": channel.id})
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+@override_settings(**JITSI_TEST_SETTINGS)
+def test_video_call_token_endpoint_returns_token_for_member():
+    alice = _make_adult("alice-video-api-3")
+    bob = _make_adult("bob-video-api-3")
+    channel = create_direct_channel(initiator=alice, other_user=bob)
+
+    client = APIClient()
+    client.force_authenticate(user=alice)
+    response = client.post(
+        reverse("chat-channels-video-token", kwargs={"channel_id": channel.id})
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["domain"] == "meet.test.local"
+    assert body["room"] == f"raipur-society-uk-{channel.id}"
+    assert body["token"]
 
 
 @pytest.mark.django_db

@@ -48,3 +48,9 @@ class SendMessageRequestSerializer(serializers.Serializer):
 
 class FlagMessageRequestSerializer(serializers.Serializer):
     reason = serializers.CharField(required=False, allow_blank=True, max_length=500)
+
+
+class VideoCallTokenSerializer(serializers.Serializer):
+    domain = serializers.CharField()
+    room = serializers.CharField()
+    token = serializers.CharField()

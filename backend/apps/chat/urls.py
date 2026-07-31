@@ -3,6 +3,7 @@ from django.urls import path
 from apps.chat.presentation.views import (
     ChannelMemberAddView,
     ChannelMessagesView,
+    ChannelVideoCallTokenView,
     DirectChannelCreateView,
     GroupChannelCreateView,
     MessageFlagView,
@@ -22,6 +23,11 @@ urlpatterns = [
         "channels/<uuid:channel_id>/messages/",
         ChannelMessagesView.as_view(),
         name="chat-channels-messages",
+    ),
+    path(
+        "channels/<uuid:channel_id>/video-token/",
+        ChannelVideoCallTokenView.as_view(),
+        name="chat-channels-video-token",
     ),
     path("messages/<uuid:message_id>/flag/", MessageFlagView.as_view(), name="chat-messages-flag"),
 ]
