@@ -48,8 +48,10 @@ const ALLOWED = [
   /^\/membership\/guardians\/consent\/$/,
   /^\/finance\/receipts\/[0-9a-f-]{36}\/download\/$/,
   /^\/membership\/profile\/me\/$/,
-  /^\/membership\/profile\/position\/$/,
   /^\/membership\/directory\/(\?.*)?$/,
+  /^\/membership\/committees\/$/,
+  /^\/membership\/committees\/[0-9a-f-]{36}\/members\/$/,
+  /^\/membership\/committees\/[0-9a-f-]{36}\/members\/[0-9a-f-]{36}\/remove\/$/,
   /^\/timeline\/entries\/$/,
   /^\/timeline\/entries\/[0-9a-f-]{36}\/delete\/$/,
 ];
