@@ -1119,227 +1119,155 @@ a.card:hover {
   line-height: 1.3;
 }
 
-/* ---------- Logo intro splash ---------- */
+/* ---------- Logo loop widget (persistent, all pages) ---------- */
 
-.logo-splash {
+.logo-loop {
   position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  background: #0f3d24;
-  cursor: pointer;
-  animation: logoSplashFade 2.4s ease forwards;
+  right: 18px;
+  bottom: 18px;
+  width: 140px;
+  height: 140px;
+  z-index: 500;
+  pointer-events: none;
 }
 
-.logo-splash-ball {
-  position: relative;
-  z-index: 2;
-  width: clamp(120px, 20vw, 220px);
-  height: clamp(120px, 20vw, 220px);
+@media (max-width: 480px) {
+  .logo-loop {
+    width: 104px;
+    height: 104px;
+    right: 10px;
+    bottom: 10px;
+  }
+}
+
+.logo-loop-net {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  width: 68px;
+  height: 38px;
+  transform: translateX(-50%) scale(0.85);
+  border: 1.2px solid rgba(15, 61, 36, 0.4);
+  border-bottom: none;
+  border-radius: 50% 50% 10% 10% / 65% 65% 8% 8%;
+  background:
+    repeating-linear-gradient(45deg, rgba(15, 61, 36, 0.35) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, rgba(15, 61, 36, 0.35) 0 1px, transparent 1px 9px);
+  opacity: 0;
+  animation: logoLoopNet 7s ease-in-out infinite;
+}
+
+.logo-loop-ball {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.6);
-  animation: logoSplashBall 2.4s forwards;
+  box-shadow: 0 10px 22px -8px rgba(0, 0, 0, 0.45);
+  animation: logoLoopBall 7s ease-in-out infinite;
 }
 
-.logo-splash-net {
-  position: absolute;
-  z-index: 1;
-  bottom: 6vh;
-  left: 50%;
-  width: min(46vw, 340px);
-  height: min(24vw, 170px);
-  transform: translateX(-50%);
-  border: 1.5px solid rgba(255, 255, 255, 0.55);
-  border-bottom: none;
-  border-radius: 50% 50% 8% 8% / 60% 60% 6% 6%;
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.4) 0 1px, transparent 1px 13px),
-    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.4) 0 1px, transparent 1px 13px);
-  animation: logoSplashNet 2.4s forwards;
-}
-
-.logo-splash-streak {
-  position: absolute;
-  z-index: 1;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  opacity: 0;
-}
-
-.logo-splash-streak-top,
-.logo-splash-streak-bottom {
-  left: 50%;
-  width: 2px;
-  height: 46vh;
-  transform: translateX(-50%);
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-}
-
-.logo-splash-streak-top {
-  top: 0;
-  animation: logoSplashStreakTop 2.4s forwards;
-}
-
-.logo-splash-streak-bottom {
-  bottom: 0;
-  animation: logoSplashStreakBottom 2.4s forwards;
-}
-
-.logo-splash-streak-left,
-.logo-splash-streak-right {
-  top: 50%;
-  width: 46vw;
-  height: 2px;
-  transform: translateY(-50%);
-}
-
-.logo-splash-streak-left {
-  left: 0;
-  animation: logoSplashStreakLeft 2.4s forwards;
-}
-
-.logo-splash-streak-right {
-  right: 0;
-  animation: logoSplashStreakRight 2.4s forwards;
-}
-
-@keyframes logoSplashBall {
+@keyframes logoLoopBall {
   0% {
-    transform: translateY(-140vh) scale(1);
+    transform: translate(-50%, -50%) translate(30px, 0) scale(1);
     opacity: 1;
-    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
-  }
-  54% {
-    transform: translateY(0) scale(1);
-    animation-timing-function: ease-out;
-  }
-  62% {
-    transform: translateY(-7%) scale(1);
-    animation-timing-function: ease-in;
-  }
-  70% {
-    transform: translateY(0) scale(1);
     animation-timing-function: linear;
   }
-  80% {
-    transform: translateY(0) scale(1);
+  5.6% {
+    transform: translate(-50%, -50%) translate(21px, 21px) scale(1);
+  }
+  11.2% {
+    transform: translate(-50%, -50%) translate(0, 30px) scale(1);
+  }
+  16.8% {
+    transform: translate(-50%, -50%) translate(-21px, 21px) scale(1);
+  }
+  22.4% {
+    transform: translate(-50%, -50%) translate(-30px, 0) scale(1);
+  }
+  28% {
+    transform: translate(-50%, -50%) translate(-21px, -21px) scale(1);
+  }
+  33.6% {
+    transform: translate(-50%, -50%) translate(0, -30px) scale(1);
+  }
+  39.2% {
+    transform: translate(-50%, -50%) translate(21px, -21px) scale(1);
+  }
+  44.8% {
+    transform: translate(-50%, -50%) translate(30px, 0) scale(1);
     opacity: 1;
-    animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
+    animation-timing-function: ease-in-out;
+  }
+  50% {
+    transform: translate(-50%, -50%) translate(0, -6px) scale(1.05);
+  }
+  56% {
+    transform: translate(-50%, -50%) translate(0, -4px) scale(1);
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  62% {
+    transform: translate(-50%, -50%) translate(0, 4px) scale(0.92);
+    opacity: 1;
+  }
+  72% {
+    transform: translate(-50%, -50%) translate(0, 14px) scale(0.7);
+    opacity: 0.9;
+  }
+  82% {
+    transform: translate(-50%, -50%) translate(0, 24px) scale(0.45);
+    opacity: 0.55;
+  }
+  91% {
+    transform: translate(-50%, -50%) translate(0, 30px) scale(0.22);
+    opacity: 0.2;
+  }
+  96% {
+    transform: translate(-50%, -50%) translate(0, 32px) scale(0.12);
+    opacity: 0;
+    animation-timing-function: linear;
+  }
+  98% {
+    transform: translate(-50%, -50%) translate(30px, 0) scale(1);
+    opacity: 0;
   }
   100% {
-    transform: translateY(30vh) scale(0.12);
-    opacity: 0;
+    transform: translate(-50%, -50%) translate(30px, 0) scale(1);
+    opacity: 1;
   }
 }
 
-@keyframes logoSplashNet {
+@keyframes logoLoopNet {
   0%,
-  76% {
+  58% {
     opacity: 0;
-    transform: translateX(-50%) scale(0.7);
+    transform: translateX(-50%) scale(0.85);
   }
-  88% {
-    opacity: 1;
-    transform: translateX(-50%) scale(1.04);
+  68% {
+    opacity: 0.9;
+    transform: translateX(-50%) scale(1.03);
   }
-  94% {
+  85% {
     opacity: 1;
     transform: translateX(-50%) scale(1);
   }
+  96%,
   100% {
     opacity: 0;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(0.85);
   }
 }
 
-@keyframes logoSplashStreakTop {
-  0%,
-  78% {
-    transform: translateX(-50%) translateY(-100%);
-    opacity: 0;
-  }
-  90% {
-    transform: translateX(-50%) translateY(64%);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateX(-50%) translateY(78%);
-    opacity: 0;
-  }
-}
-
-@keyframes logoSplashStreakBottom {
-  0%,
-  78% {
-    transform: translateX(-50%) translateY(100%);
-    opacity: 0;
-  }
-  90% {
-    transform: translateX(-50%) translateY(-24%);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateX(-50%) translateY(-38%);
-    opacity: 0;
-  }
-}
-
-@keyframes logoSplashStreakLeft {
-  0%,
-  78% {
-    transform: translateY(-50%) translateX(-100%);
-    opacity: 0;
-  }
-  90% {
-    transform: translateY(-50%) translateX(46%);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-50%) translateX(58%);
-    opacity: 0;
-  }
-}
-
-@keyframes logoSplashStreakRight {
-  0%,
-  78% {
-    transform: translateY(-50%) translateX(100%);
-    opacity: 0;
-  }
-  90% {
-    transform: translateY(-50%) translateX(-46%);
-    opacity: 0.9;
-  }
-  100% {
-    transform: translateY(-50%) translateX(-58%);
-    opacity: 0;
-  }
-}
-
-@keyframes logoSplashFade {
-  0%,
-  88% {
+@media (prefers-reduced-motion: reduce) {
+  .logo-loop-ball {
+    animation: none;
+    transform: translate(-50%, -50%);
     opacity: 1;
   }
-  100% {
-    opacity: 0;
+  .logo-loop-net {
+    display: none;
   }
-}
-
-.logo-splash-reduced {
-  animation: logoSplashFade 0.5s ease forwards;
-}
-
-.logo-splash-reduced .logo-splash-ball {
-  animation: none;
-  opacity: 1;
-  transform: none;
-}
-
-.logo-splash-reduced .logo-splash-net,
-.logo-splash-reduced .logo-splash-streak {
-  display: none;
 }
