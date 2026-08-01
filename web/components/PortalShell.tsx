@@ -3,6 +3,7 @@ import { LogoutButton } from "@/components/LogoutButton";
 import { PortalTabs } from "@/components/PortalTabs";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrandMark } from "@/components/BrandMark";
 import type { Lang } from "@/lib/i18n/config";
 
 type CurrentUser = {
@@ -33,6 +34,7 @@ export function PortalShell({
       <div className="portal-topbar">
         <div className="container portal-topbar-inner">
           <Link href="/" className="brand" style={{ color: "var(--chrome-text)" }}>
+            <BrandMark size={30} />
             Raipur Society UK
             <span className="portal-label">· {portalLabel}</span>
           </Link>

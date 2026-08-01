@@ -6,6 +6,7 @@ import { translate } from "@/lib/i18n/dictionary";
 import type { Lang } from "@/lib/i18n/config";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { BrandMark } from "@/components/BrandMark";
 
 export function TopNav({ lang }: { lang: Lang }) {
   const [open, setOpen] = useState(false);
@@ -26,6 +27,7 @@ export function TopNav({ lang }: { lang: Lang }) {
       <div className="container">
         <nav className="nav">
           <Link href="/" className="brand" onClick={() => setOpen(false)}>
+            <BrandMark />
             Raipur Society UK
           </Link>
 

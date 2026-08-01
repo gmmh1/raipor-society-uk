@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { translate } from "@/lib/i18n/dictionary";
+import { BrandMark } from "@/components/BrandMark";
 import type { Lang } from "@/lib/i18n/config";
 
 const ADMIN_ROLES = new Set(["admin", "treasurer", "volunteer"]);
@@ -60,6 +61,7 @@ function LoginFields({ lang }: { lang: Lang }) {
     >
       <div className="card" style={{ maxWidth: 400, width: "100%", padding: 40 }}>
         <Link href="/" className="brand" style={{ marginBottom: 8 }}>
+          <BrandMark />
           Raipur Society UK
         </Link>
         <h1 style={{ fontSize: "1.9rem", marginTop: 22 }}>{t("login.title")}</h1>

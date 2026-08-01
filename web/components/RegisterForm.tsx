@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { translate } from "@/lib/i18n/dictionary";
+import { BrandMark } from "@/components/BrandMark";
 import type { Lang } from "@/lib/i18n/config";
 
 export function RegisterForm({ lang }: { lang: Lang }) {
@@ -106,6 +107,7 @@ export function RegisterForm({ lang }: { lang: Lang }) {
     >
       <div className="card" style={{ maxWidth: 460, width: "100%", padding: 40 }}>
         <Link href="/" className="brand" style={{ marginBottom: 8 }}>
+          <BrandMark />
           Raipur Society UK
         </Link>
         <h1 style={{ fontSize: "1.9rem", marginTop: 22 }}>{t("register.title")}</h1>

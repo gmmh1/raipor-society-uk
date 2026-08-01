@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Manrope, Noto_Sans_Bengali, Noto_Serif_Bengali } from "next/font/google";
 import { getLang } from "@/lib/i18n/server";
+import { LogoSplash } from "@/components/LogoSplash";
 import "./globals.css";
 
 const display = Instrument_Serif({
@@ -36,6 +37,10 @@ export const metadata: Metadata = {
   title: "Raipur Society UK",
   description:
     "A community bringing people together through culture, learning, and collective progress — Unity, Culture, Friendship, Progress.",
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
+  },
 };
 
 export default async function RootLayout({
@@ -58,6 +63,7 @@ export default async function RootLayout({
               "(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();",
           }}
         />
+        <LogoSplash />
         {children}
       </body>
     </html>
