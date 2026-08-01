@@ -850,6 +850,8 @@ a.card:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  color: var(--ink);
+  font-size: 1.1rem;
 }
 
 .mobile-panel {
@@ -1147,12 +1149,13 @@ a.card:hover {
   width: 68px;
   height: 38px;
   transform: translateX(-50%) scale(0.85);
-  border: 1.2px solid rgba(15, 61, 36, 0.4);
+  border: 1.2px solid color-mix(in srgb, var(--ink) 55%, transparent);
   border-bottom: none;
   border-radius: 50% 50% 10% 10% / 65% 65% 8% 8%;
   background:
-    repeating-linear-gradient(45deg, rgba(15, 61, 36, 0.35) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(-45deg, rgba(15, 61, 36, 0.35) 0 1px, transparent 1px 9px);
+    repeating-linear-gradient(45deg, color-mix(in srgb, var(--ink) 45%, transparent) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ink) 45%, transparent) 0 1px, transparent 1px 9px);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
   opacity: 0;
   animation: logoLoopNet 7s ease-in-out infinite;
 }
